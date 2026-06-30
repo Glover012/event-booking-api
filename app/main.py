@@ -2,6 +2,7 @@ from fastapi import FastAPI, status
 
 from .core import settings
 
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,

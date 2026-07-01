@@ -1,6 +1,7 @@
 from fastapi import FastAPI, status
 
 from .core import settings
+from .api import user_router
 
 
 app = FastAPI(
@@ -15,3 +16,6 @@ def health_check():
         "service": settings.app_name,
         "version": settings.app_version,
         }
+
+### Routers ###
+app.include_router(user_router)

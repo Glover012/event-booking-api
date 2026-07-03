@@ -1,21 +1,22 @@
 from fastapi import FastAPI, status
 
-from .core import settings
-from .api import user_router
+from .core.config import settings
+from .api.routers import user_router, auth_router
 
 
 app = FastAPI(
-    title=settings.app_name,
-    version=settings.app_version,
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
     )
 
 @app.get("/health", status_code=status.HTTP_200_OK, tags=["Health"])
 def health_check():
     return {
         "status": "ok",
-        "service": settings.app_name,
-        "version": settings.app_version,
+        "service": settings.APP_NAME,
+        "version": settings.APP_VERSION,
         }
 
 ### Routers ###
 app.include_router(user_router)
+app.include_router(auth_router)

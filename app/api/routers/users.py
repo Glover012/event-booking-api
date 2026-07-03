@@ -2,14 +2,25 @@ from typing import Annotated, ClassVar
 from enum import StrEnum
 import re
 
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status, HTTPException, Depends
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, Field, SecretStr, EmailStr, ConfigDict, field_validator
-from pwdlib import PasswordHash
 
-from ...db import Users, db_dependency
+from ...db import db_dependency
+from ...db.models import Users
+from .auth import get_current_user
+from ...core.security import PasswordHasher
 
+
+### API Router ###
+user_router = APIRouter(
+    prefix="/user",
+    tags=["user"]
+)
+
+### Dependency ###
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 ### Validation && Models ###
 class UserRole(StrEnum):
@@ -17,13 +28,6 @@ class UserRole(StrEnum):
     ORGANIZER = "organizer"
     USER = "user"
 
-
-class PasswordHasher:
-    _PASSWORD_HASH: ClassVar[PasswordHash] = PasswordHash.recommended() # Argon2 is default
-
-    @classmethod
-    def hash_password(cls, password: SecretStr) -> str:
-        return cls._PASSWORD_HASH.hash(password.get_secret_value())
 
 class RegisterUserResponse(BaseModel):
     """Response returned after successful user registration."""
@@ -36,6 +40,7 @@ class RegisterUserResponse(BaseModel):
     role: UserRole
     first_name: str
     last_name: str
+
 
 class RegisterUserRequest(BaseModel):
     """User register request form. Validates request data and password."""
@@ -84,28 +89,12 @@ class RegisterUserRequest(BaseModel):
 
         return password
 
-### API Router && Dependency ###
-user_router = APIRouter(
-    prefix="/user",
-    tags=["user"]
-)
-
-
 ### Endpoints ###
 @user_router.post('/', status_code=status.HTTP_201_CREATED, response_model=RegisterUserResponse)
 def register_user(
-    db: db_dependency, 
+    db: db_dependency,
     register_user_request: RegisterUserRequest
     ) -> RegisterUserResponse:
-
-    new_user = Users(
-        email = register_user_request.email,
-        username = register_user_request.username,
-        first_name = register_user_request.first_name,
-        last_name = register_user_request.last_name,
-        role = UserRole.USER.value
-        )
-    
     user_exists = db.query(Users).filter(
         or_(
             Users.username == register_user_request.username,
@@ -118,13 +107,20 @@ def register_user(
             status_code=status.HTTP_409_CONFLICT,
             detail="User already exists",
             )
-    
+
     # Race condition
     try:
-        # Due to resource consumption password hashing is proceeded directly
+        # Due to resource consumption password hashing is proceeded
         # before the add/commit, when all user creation conditions are met
-        new_user.hashed_password = PasswordHasher.hash_password(
-            register_user_request.password
+        new_user = Users(
+            email = register_user_request.email,
+            username = register_user_request.username,
+            first_name = register_user_request.first_name,
+            last_name = register_user_request.last_name,
+            hashed_password = PasswordHasher.hash_password(
+                register_user_request.password
+                ),
+            role = UserRole.USER.value,
             )
         db.add(new_user)
         db.commit()
@@ -134,5 +130,18 @@ def register_user(
             status_code=status.HTTP_409_CONFLICT,
             detail="User already exists",
         )
-    
+
     return new_user
+
+@user_router.get("/", status_code=status.HTTP_200_OK)
+def get_user(
+    db: db_dependency,
+    user: user_dependency,
+    ):
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail='Authentication failed'
+            )
+
+    return db.query(Users).filter(Users.username == user["username"]).first()

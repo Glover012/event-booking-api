@@ -5,14 +5,14 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from app import settings
+from app.core.config import settings
 from app.db import Base
 from app.db.models import models
 
 
 # Cfg
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.database_url)
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Logging
 if config.config_file_name is not None:

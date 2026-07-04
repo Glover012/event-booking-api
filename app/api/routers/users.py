@@ -90,11 +90,15 @@ class RegisterUserRequest(BaseModel):
         return password
 
 ### Endpoints ###
-@user_router.post('/', status_code=status.HTTP_201_CREATED, response_model=RegisterUserResponse)
+@user_router.post(
+        '/', 
+        status_code=status.HTTP_201_CREATED, 
+        response_model=RegisterUserResponse
+        )
 def register_user(
     db: db_dependency,
     register_user_request: RegisterUserRequest
-    ) -> RegisterUserResponse:
+    ):
     user_exists = db.query(Users).filter(
         or_(
             Users.username == register_user_request.username,

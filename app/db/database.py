@@ -2,9 +2,13 @@ from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
 
 from ..core.config import settings
+
+
+class Base(DeclarativeBase):
+    pass
 
 
 engine = create_engine(
@@ -15,8 +19,6 @@ SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
     )
-
-Base = declarative_base()
 
 def get_db():
     db = SessionLocal()

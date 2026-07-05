@@ -10,9 +10,12 @@ from pydantic import SecretStr
 from .config import settings
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="auth/token",
+    auto_error=False,
+    )
 
-token_dependency = Annotated[str, Depends(oauth2_scheme)]
+token_dependency = Annotated[str | None, Depends(oauth2_scheme)] # None because auto_error is False
 
 class PasswordHasher:
     _PASSWORD_HASH: ClassVar[PasswordHash] = PasswordHash.recommended() # Argon2 is default

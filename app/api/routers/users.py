@@ -7,10 +7,11 @@ from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel, Field, SecretStr, EmailStr, ConfigDict, field_validator
 
+from .auth import get_current_user
 from ...db import db_dependency
 from ...db.models import Users
-from .auth import get_current_user
 from ...core.security import PasswordHasher
+from ...core.api_response import ApiResponse, ApiInfo
 
 
 ### API Router ###
@@ -28,12 +29,11 @@ class UserRole(StrEnum):
     ORGANIZER = "organizer"
     USER = "user"
 
-
-class RegisterUserResponse(BaseModel):
-    """Response returned after successful user registration."""
+class UserResponse(BaseModel):
+    """Response model with User attributes."""
 
     # Construct response model from SQLAlchemy model
-    model_config = ConfigDict(from_attributes=True) 
+    model_config = ConfigDict(from_attributes=True)
 
     email: EmailStr
     username: str
@@ -65,7 +65,7 @@ class RegisterUserRequest(BaseModel):
     @classmethod
     def strip_text_fields(cls, value: object) -> object:
         # Technically value may be different from an str, 
-        # due to mode="before", therefore object
+        # due to mode="before", therefore an object type
         if isinstance(value, str):
             return value.strip()
         return value
@@ -92,13 +92,13 @@ class RegisterUserRequest(BaseModel):
 ### Endpoints ###
 @user_router.post(
         '/', 
-        status_code=status.HTTP_201_CREATED, 
-        response_model=RegisterUserResponse
+        status_code=status.HTTP_201_CREATED,
+        response_model=ApiResponse[UserResponse]
         )
 def register_user(
     db: db_dependency,
     register_user_request: RegisterUserRequest
-    ):
+    ) -> ApiResponse[UserResponse]:
     user_exists = db.query(Users).filter(
         or_(
             Users.username == register_user_request.username,
@@ -109,8 +109,8 @@ def register_user(
     if user_exists:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="User already exists",
-            )
+            detail=ApiResponse.fail(ApiInfo.USER_ALREADY_EXISTS),
+        )
 
     # Race condition
     try:
@@ -132,20 +132,30 @@ def register_user(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="User already exists",
+            detail=ApiResponse.fail(ApiInfo.USER_ALREADY_EXISTS),
         )
 
-    return new_user
+    return ApiResponse[UserResponse].success(
+        ApiInfo.USER_CREATED,
+        data=new_user,
+        )
 
-@user_router.get("/", status_code=status.HTTP_200_OK)
+@user_router.get(
+        "/",
+        status_code=status.HTTP_200_OK,
+        response_model=ApiResponse[UserResponse],
+        )
 def get_user(
     db: db_dependency,
     user: user_dependency,
-    ):
+    ) -> ApiResponse[UserResponse]:
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail='Authentication failed'
+            detail=ApiResponse.fail(ApiInfo.AUTHENTICATION_FAILED)
             )
-
-    return db.query(Users).filter(Users.username == user["username"]).first()
+    user_model = db.query(Users).filter(Users.username == user["username"]).first()
+    return ApiResponse[UserResponse].success(
+        ApiInfo.USER_RETRIEVED,
+        data=user_model,
+        )

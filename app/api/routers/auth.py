@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from ...core.security import token_dependency, create_access_token, PasswordHasher, decode_access_token
 from ...db import db_dependency
 from ...db.models import Users
+from ...core.api_response import ApiResponse, ApiInfo
 
 ### API Router ###
 auth_router = APIRouter(
@@ -36,25 +37,33 @@ def authenticate_user(
     return user
 
 def get_current_user(token: token_dependency):
+    if token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ApiResponse.fail(ApiInfo.NOT_AUTHENTICATED),
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     try:
         payload = decode_access_token(token)
 
         # Str to Int conversion, for SQLAlchemy queries
-        user_id: int = int(payload["sub"]) 
+        user_id: int = int(payload["sub"])
         username: str = payload["username"]
         user_role: str = payload["role"]
 
         return {"username": username, "id": user_id, "role": user_role}
 
         # PyJWTError - SuperClass for all JWT exceptions
-    except (jwt.PyJWTError, KeyError): 
+    except (jwt.PyJWTError, KeyError, ValueError):
         raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, 
-                detail="Could not get user."
-                )
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=ApiResponse.fail(ApiInfo.AUTHENTICATION_FAILED),
+            headers={"WWW-Authenticate": "Bearer"},
+            )
 
 ### Endpoints ###
-@auth_router.post("/token", response_model=Token)
+@auth_router.post("/token", response_model=ApiResponse[Token])
 def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: db_dependency,
@@ -67,7 +76,7 @@ def login_for_access_token(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not authenticate user."
+            detail=ApiResponse.fail(ApiInfo.INVALID_CREDENTIALS),
         )
     token = create_access_token(
         user_id=user.id,
@@ -75,4 +84,7 @@ def login_for_access_token(
         user_role=user.role,
         )
     
-    return {"access_token": token, "token_type": "bearer"}
+    return ApiResponse[Token].success(
+        ApiInfo.TOKEN_CREATED,
+        data={"access_token": token, "token_type": "bearer"},
+        )

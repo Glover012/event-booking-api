@@ -1,7 +1,7 @@
 from fastapi import FastAPI, status
 
 from .core.config import settings
-from .api.routers import user_router, auth_router
+from .routers import user_router, auth_router
 from .core.exception_handlers import register_custom_exception_handlers
 
 ### App ###

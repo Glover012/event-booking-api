@@ -11,7 +11,7 @@ from .config import settings
 
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="auth/token",
+    tokenUrl="auth/test/token",
     auto_error=False,
     )
 
@@ -23,6 +23,10 @@ class PasswordHasher:
     @classmethod
     def hash_password(cls, password: SecretStr) -> str:
         return cls._PASSWORD_HASH.hash(password.get_secret_value())
+    
+    @classmethod
+    def verify_password(cls, password: str, hashed_password: str) -> bool:
+        return cls._PASSWORD_HASH.verify(password, hashed_password)
 
 
 def create_access_token(

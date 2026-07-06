@@ -7,7 +7,7 @@ from alembic import context
 
 from app.core.config import settings
 from app.db import Base
-from app.db.models import models
+from app.db import models
 
 
 # Cfg

@@ -1,21 +1,18 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import Generic, Literal, TypeVar
-
-from pydantic import BaseModel
 
 
-API_RESPONSE_MODEL = TypeVar("API_RESPONSE_MODEL")
-
-
+# slots=True removes __dict__ and prevents dynamic attribute assignment
 @dataclass(frozen=True, slots=True)
 class ApiInfoItem:
+    """Closed value object for an ApiResponse code and message."""
+
     CODE: str
     MESSAGE: str
 
 
 class ApiInfo:
+    """Namespace for predefined ApiResponse codes and messages."""
+
     USER_CREATED = ApiInfoItem(
         CODE="USER_CREATED",
         MESSAGE="User created successfully.",
@@ -68,52 +65,3 @@ class ApiInfo:
         CODE="INTERNAL_SERVER_ERROR",
         MESSAGE="Internal server error.",
     )
-
-
-class ApiResponse(BaseModel, Generic[API_RESPONSE_MODEL]):
-    status: Literal["success", "fail", "error"]
-    code: str
-    message: str
-    data: API_RESPONSE_MODEL | None = None
-
-    @classmethod
-    def success(
-        cls,
-        info: ApiInfoItem,
-        data: API_RESPONSE_MODEL | None = None,
-    ) -> ApiResponse[API_RESPONSE_MODEL]:
-
-        return cls(
-            status="success",
-            code=info.CODE,
-            message=info.MESSAGE,
-            data=data,
-        )
-
-    @classmethod
-    def fail(
-        cls,
-        info: ApiInfoItem,
-        data: API_RESPONSE_MODEL | None = None,
-    ) -> ApiResponse[API_RESPONSE_MODEL]:
-
-        return cls(
-            status="fail",
-            code=info.CODE,
-            message=info.MESSAGE,
-            data=data,
-        )
-
-    @classmethod
-    def error(
-        cls,
-        info: ApiInfoItem,
-        data: API_RESPONSE_MODEL | None = None,
-    ) -> ApiResponse[API_RESPONSE_MODEL]:
-
-        return cls(
-            status="error",
-            code=info.CODE,
-            message=info.MESSAGE,
-            data=data,
-        )

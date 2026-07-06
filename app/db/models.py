@@ -1,7 +1,7 @@
 from sqlalchemy import String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from ..database import Base
+from .database import Base
 
 
 class Users(Base):

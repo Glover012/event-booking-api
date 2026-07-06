@@ -2,13 +2,12 @@ from fastapi import APIRouter, status, HTTPException, Depends
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 
-from ..db import db_dependency
+from ..dependencies import db_dependency, user_dependency
 from ..db.models import Users
 from ..core.security import PasswordHasher
 from ..api.response import ApiResponse
 from ..api.info import ApiInfo
 from ..schemas.users import UserRole, UserResponse, RegisterUserRequest
-from ..dependencies.auth import user_dependency
 
 ### API Router ###
 user_router = APIRouter(

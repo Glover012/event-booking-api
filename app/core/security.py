@@ -1,21 +1,12 @@
-from typing import ClassVar, Annotated, Any
+from typing import ClassVar, Any
 from datetime import datetime, timedelta, timezone
 
 import jwt
-from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
 from pydantic import SecretStr
 
 from .config import settings
 
-
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="auth/test/token",
-    auto_error=False,
-    )
-
-token_dependency = Annotated[str | None, Depends(oauth2_scheme)] # None because auto_error is False
 
 class PasswordHasher:
     _PASSWORD_HASH: ClassVar[PasswordHash] = PasswordHash.recommended() # Argon2 is default

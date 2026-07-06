@@ -2,14 +2,21 @@ from typing import Annotated
 
 import jwt
 from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 from starlette import status
 
-from ..core.security import token_dependency, decode_access_token
+from ..core.security import decode_access_token
 from ..api.info import ApiInfo
 from ..api.response import ApiResponse
 
 
 ### Dependencies ###
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="auth/test/token",
+    auto_error=False,
+    )
+
+token_dependency = Annotated[str | None, Depends(oauth2_scheme)] # None because auto_error is False
 
 def get_current_user(token: token_dependency):
     if token is None:

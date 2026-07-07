@@ -1,4 +1,5 @@
 from typing import Any
+import logging
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
@@ -7,6 +8,8 @@ from fastapi.responses import JSONResponse
 from ..api.response import ApiResponse
 from ..api.info import ApiInfo
 
+
+logger = logging.getLogger(__name__)
 
 def register_custom_exception_handlers(app: FastAPI) -> None:
     """
@@ -32,6 +35,24 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
                 data=None,
             ).model_dump(mode="json")
 
+        ### Logging ###
+        if exc.status_code >= 500:
+            logger.error(
+                "HTTP exception: %s %s -> %s code=%s",
+                request.method,
+                request.url.path,
+                exc.status_code,
+                content.get("code"),
+            )
+        else:
+            logger.info(
+                "HTTP exception: %s %s -> %s code=%s",
+                request.method,
+                request.url.path,
+                exc.status_code,
+                content.get("code"),
+            )
+
         return JSONResponse(
             status_code=exc.status_code,
             content=content,
@@ -53,13 +74,22 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
             for error in exc.errors()
         ]
 
+        ### Logging ###
+        logger.info(
+            "Request Validation Error: %s %s -> %s errors=%s",
+            request.method,
+            request.url.path,
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            validation_errors,
+        )
+
         content = ApiResponse[list[dict[str, Any]]].fail(
             ApiInfo.VALIDATION_ERROR,
             data=validation_errors,
         ).model_dump(mode="json")
 
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             content=content,
         )
 
@@ -68,6 +98,15 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
         request: Request,
         exc: ResponseValidationError,
     ) -> JSONResponse:
+
+        ### Logging ###
+        logger.error(
+            "Response validation error: %s %s -> %s.",
+            request.method,
+            request.url.path,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            exc_info=(type(exc), exc, exc.__traceback__)
+        )
 
         content = ApiResponse[None].error(
             ApiInfo.RESPONSE_VALIDATION_ERROR,
@@ -83,6 +122,15 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
         request: Request,
         exc: Exception,
     ) -> JSONResponse:
+
+        ### Logging ###
+        logger.error(
+            "Unhandled exception: %s %s -> %s.",
+            request.method,
+            request.url.path,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            exc_info=(type(exc), exc, exc.__traceback__),
+        )
 
         content = ApiResponse[None].error(
             ApiInfo.INTERNAL_SERVER_ERROR,

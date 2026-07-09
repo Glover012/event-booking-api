@@ -4,12 +4,39 @@ import re
 
 from pydantic import BaseModel, Field, SecretStr, EmailStr, ConfigDict, field_validator
 
+### Static Error Info ###
+PASSWORD_REQUIREMENTS_ERROR = (
+    "Password must contain at least one lowercase letter, one uppercase letter, "
+    "one digit and one special character"
+)
+
+PASSWORD_WHITESPACE_ERROR = "Password must not contain whitespace"
+
 
 ### Validation && Models ###
+def validate_password_strength(password: SecretStr) -> SecretStr:
+    value = password.get_secret_value()
+
+    has_whitespace = bool(re.search(r"\s", value))
+    has_lowercase = any(char.islower() for char in value)
+    has_uppercase = any(char.isupper() for char in value)
+    has_digit = any(char.isdigit() for char in value)
+    has_special_character = any(not char.isalnum() for char in value)
+
+    if has_whitespace:
+        raise ValueError(PASSWORD_WHITESPACE_ERROR)
+
+    if not all([has_lowercase, has_uppercase, has_digit, has_special_character]):
+        raise ValueError(PASSWORD_REQUIREMENTS_ERROR)
+
+    return password
+
+
 class UserRole(StrEnum):
     ADMIN = "admin"
     ORGANIZER = "organizer"
     USER = "user"
+
 
 class UserResponse(BaseModel):
     """Response model with User attributes."""
@@ -26,11 +53,6 @@ class UserResponse(BaseModel):
 
 class RegisterUserRequest(BaseModel):
     """User register request form. Validates request data and password."""
-
-    PASSWORD_REQUIREMENTS_ERROR: ClassVar[str] = (
-        "Password must contain at least one lowercase letter, one uppercase letter, "
-        "one digit and one special character"
-        )
 
     model_config = ConfigDict(
         extra="forbid"
@@ -52,21 +74,18 @@ class RegisterUserRequest(BaseModel):
             return value.strip()
         return value
 
-    @field_validator("password") # Runs validate_password_strength for password field model
+    # Runs validate_password_strength for "password" field model
+    @field_validator("password") 
     @classmethod
-    def validate_password(cls, password: SecretStr) -> SecretStr:
-        value = password.get_secret_value()
+    def validate_requested_password(cls, password: SecretStr):
+        return validate_password_strength(password)
 
-        has_whitespace = bool(re.search(r"\s", value))
-        has_lowercase = any(char.islower() for char in value)
-        has_uppercase = any(char.isupper() for char in value)
-        has_digit = any(char.isdigit() for char in value)
-        has_special_character = any(not char.isalnum() for char in value)
 
-        if has_whitespace:
-            raise ValueError("Password must not contain whitespace")
+class ChangePasswordRequest(BaseModel):
+    old_password: SecretStr
+    new_password: SecretStr = Field(min_length=8, max_length=128)
 
-        if not all([has_lowercase, has_uppercase, has_digit, has_special_character]):
-            raise ValueError(cls.PASSWORD_REQUIREMENTS_ERROR)
-
-        return password
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, new_password: SecretStr):
+        return validate_password_strength(new_password)

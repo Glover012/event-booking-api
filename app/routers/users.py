@@ -7,7 +7,7 @@ from ..db.models import Users
 from ..core.security import PasswordHasher
 from ..api.response import ApiResponse
 from ..api.info import ApiInfo
-from ..schemas.users import UserRole, UserResponse, RegisterUserRequest
+from ..schemas.users import UserRole, UserResponse, RegisterUserRequest, ChangePasswordRequest
 
 ### API Router ###
 user_router = APIRouter(
@@ -86,3 +86,53 @@ def get_user(
         ApiInfo.USER_RETRIEVED,
         data=user_model,
         )
+
+@user_router.put(
+        "/password", 
+        status_code=status.HTTP_200_OK, 
+        response_model=ApiResponse[None],
+        )
+def change_password(
+    db: db_dependency,
+    user: user_dependency,
+    change_password_request: ChangePasswordRequest,
+    ):
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail=ApiResponse.fail(ApiInfo.AUTHENTICATION_FAILED)
+            )
+    user_model = db.query(Users).filter(Users.id == user.get("id")).first()
+
+    if user_model is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=ApiResponse.fail(ApiInfo.USER_DOES_NOT_EXIST)
+            )
+
+    if not PasswordHasher.verify_password(
+        change_password_request.old_password.get_secret_value(),
+        user_model.hashed_password,
+        ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=ApiResponse.fail(ApiInfo.INCORRECT_PASSWORD)
+            )
+    elif PasswordHasher.verify_password(
+        change_password_request.new_password.get_secret_value(),
+        user_model.hashed_password,
+        ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail=ApiResponse.fail(ApiInfo.SAME_PASSWORD)
+            )
+
+    user_model.hashed_password = PasswordHasher.hash_password(
+        change_password_request.new_password
+    )
+    db.add(user_model)
+    db.commit()
+
+    return ApiResponse[None].success(
+        ApiInfo.PASSWORD_CHANGED_SUCCESSFULLY
+    )

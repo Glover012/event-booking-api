@@ -22,6 +22,27 @@ class ApiInfo:
         CODE="USER_ALREADY_EXISTS",
         MESSAGE="User already exists.",
     )
+
+    USER_DOES_NOT_EXIST = ApiInfoItem(
+        CODE="USER_DOES_NOT_EXIST",
+        MESSAGE="User does not exist."
+    )
+
+    INCORRECT_PASSWORD = ApiInfoItem(
+        CODE="INCORRECT_PASSWORD",
+        MESSAGE="Password is incorrect.",
+    )
+
+    SAME_PASSWORD = ApiInfoItem(
+        CODE= "SAME_PASSWORD",
+        MESSAGE="New password can not be the same."
+    )
+
+    PASSWORD_CHANGED_SUCCESSFULLY = ApiInfoItem(
+        CODE="PASSWORD_CHANGED_SUCCESSFULLY",
+        MESSAGE="Password changed successfully."
+    )
+
     USER_RETRIEVED = ApiInfoItem(
         CODE="USER_RETRIEVED",
         MESSAGE="User retrieved successfully.",
@@ -31,6 +52,7 @@ class ApiInfo:
         CODE="INVALID_CREDENTIALS",
         MESSAGE="Invalid credentials.",
     )
+
     TOKEN_CREATED = ApiInfoItem(
         CODE="TOKEN_CREATED",
         MESSAGE="Token created successfully.",

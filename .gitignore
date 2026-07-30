@@ -6,5 +6,7 @@ venv/
 
 .env
 
+.direnv/
+
 logs/
 *.log

@@ -1,0 +1,10 @@
+# Include full production lock
+-r requirements.lock
+
+# Testing
+pytest>=9.1,<10.0
+pytest-cov>=7.1,<8.0
+httpx>=0.28,<0.29
+
+# Dependency management
+pip-tools>=7.6,<8.0

@@ -1,0 +1,10 @@
+*
+
+!app
+!alembic
+!alembic.ini
+!docker-entrypoint.sh
+!requirements.lock
+
+**/__pycache__
+**/*.pyc

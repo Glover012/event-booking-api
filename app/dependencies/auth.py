@@ -1,30 +1,27 @@
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from starlette import status
 
 from ..core.security import decode_access_token
-from ..api.info import ApiInfo
-from ..api.response import ApiResponse
+from ..api.exceptions import HTTPError
 
 
 ### Dependencies ###
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="auth/test/token",
+    tokenUrl="auth/token",
     auto_error=False,
     )
 
 token_dependency = Annotated[str | None, Depends(oauth2_scheme)] # None because auto_error is False
 
 def get_current_user(token: token_dependency):
+    """
+    Extract user info from JWT.
+    """
     if token is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ApiResponse.fail(ApiInfo.NOT_AUTHENTICATED),
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise HTTPError.NOT_AUTHENTICATED
 
     try:
         payload = decode_access_token(token)
@@ -38,10 +35,4 @@ def get_current_user(token: token_dependency):
 
         # PyJWTError - SuperClass for all JWT exceptions
     except (jwt.PyJWTError, KeyError, ValueError):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ApiResponse.fail(ApiInfo.AUTHENTICATION_FAILED),
-            headers={"WWW-Authenticate": "Bearer"},
-            )
-    
-user_dependency = Annotated[dict, Depends(get_current_user)]
+        raise HTTPError.AUTHENTICATION_FAILED

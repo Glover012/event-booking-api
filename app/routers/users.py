@@ -1,12 +1,12 @@
-from fastapi import APIRouter, status, HTTPException, Depends
-from sqlalchemy import or_
+from fastapi import APIRouter, status
 from sqlalchemy.exc import IntegrityError
 
-from ..dependencies import db_dependency, user_dependency
+from ..dependencies import db_dependency, user_dependency, user_service_dependency
 from ..db.models import Users
 from ..core.security import PasswordHasher
 from ..api.response import ApiResponse
 from ..api.info import ApiInfo
+from ..api.exceptions import HTTPError
 from ..schemas.users import UserRole, UserResponse, RegisterUserRequest, ChangePasswordRequest
 
 ### API Router ###
@@ -17,26 +17,20 @@ user_router = APIRouter(
 
 ### Endpoints ###
 @user_router.post(
-        '/', 
+        '/',
         status_code=status.HTTP_201_CREATED,
         response_model=ApiResponse[UserResponse]
         )
 def register_user(
     db: db_dependency,
-    register_user_request: RegisterUserRequest
+    user_service: user_service_dependency,
+    register_user_request: RegisterUserRequest,
     ) -> ApiResponse[UserResponse]:
-    user_exists = db.query(Users).filter(
-        or_(
-            Users.username == register_user_request.username,
-            Users.email == register_user_request.email,
-            )
-            ).first()
 
-    if user_exists:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ApiResponse.fail(ApiInfo.USER_ALREADY_EXISTS),
-        )
+    user_service.confirm_available_credentials(
+        username=register_user_request.username,
+        email=register_user_request.email,
+    )
 
     # Race condition
     try:
@@ -56,10 +50,7 @@ def register_user(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=ApiResponse.fail(ApiInfo.USER_ALREADY_EXISTS),
-        )
+        raise HTTPError.USER_ALREADY_EXISTS
 
     return ApiResponse[UserResponse].success(
         ApiInfo.USER_CREATED,
@@ -73,59 +64,46 @@ def register_user(
         response_model=ApiResponse[UserResponse],
         )
 def get_user(
-    db: db_dependency,
+    user_service: user_service_dependency,
     user: user_dependency,
     ) -> ApiResponse[UserResponse]:
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail=ApiResponse.fail(ApiInfo.AUTHENTICATION_FAILED)
-            )
-    user_model = db.query(Users).filter(Users.username == user["username"]).first()
+
+    user_model = user_service.get_model_secured(
+        username=user["username"], 
+        )
+
     return ApiResponse[UserResponse].success(
         ApiInfo.USER_RETRIEVED,
         data=user_model,
         )
 
 @user_router.put(
-        "/password", 
+        "/password",
         status_code=status.HTTP_200_OK, 
         response_model=ApiResponse[None],
         )
 def change_password(
     db: db_dependency,
     user: user_dependency,
+    user_service: user_service_dependency,
     change_password_request: ChangePasswordRequest,
     ):
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail=ApiResponse.fail(ApiInfo.AUTHENTICATION_FAILED)
-            )
-    user_model = db.query(Users).filter(Users.id == user.get("id")).first()
 
-    if user_model is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
-            detail=ApiResponse.fail(ApiInfo.USER_DOES_NOT_EXIST)
-            )
+    user_model = user_service.get_model_secured(
+        username=user["username"], 
+        )
 
     if not PasswordHasher.verify_password(
         change_password_request.old_password.get_secret_value(),
         user_model.hashed_password,
         ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ApiResponse.fail(ApiInfo.INCORRECT_PASSWORD)
-            )
+        raise HTTPError.INCORRECT_PASSWORD
+
     elif PasswordHasher.verify_password(
         change_password_request.new_password.get_secret_value(),
         user_model.hashed_password,
         ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail=ApiResponse.fail(ApiInfo.SAME_PASSWORD)
-            )
+        raise HTTPError.SAME_PASSWORD
 
     user_model.hashed_password = PasswordHasher.hash_password(
         change_password_request.new_password

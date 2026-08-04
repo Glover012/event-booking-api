@@ -1,2 +1,3 @@
-from .auth import user_dependency, token_dependency
+from .auth import token_dependency
 from .database import db_dependency
+from .users import user_dependency, user_service_dependency

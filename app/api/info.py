@@ -23,9 +23,9 @@ class ApiInfo:
         MESSAGE="User already exists.",
     )
 
-    USER_DOES_NOT_EXIST = ApiInfoItem(
-        CODE="USER_DOES_NOT_EXIST",
-        MESSAGE="User does not exist."
+    USER_DOES_NOT_EXISTS = ApiInfoItem(
+        CODE="USER_DOES_NOT_EXISTS",
+        MESSAGE="User does not exists."
     )
 
     INCORRECT_PASSWORD = ApiInfoItem(

@@ -87,3 +87,8 @@ class ApiInfo:
         CODE="INTERNAL_SERVER_ERROR",
         MESSAGE="Internal server error.",
     )
+
+    FORBIDDEN = ApiInfoItem(
+        CODE="FORBIDDEN",
+        MESSAGE="Insufficient permissions."
+    )

@@ -48,6 +48,7 @@ def login_for_access_token(
     token = create_access_token(
         user_id=user.id,
         username=user.username,
+        email=user.email,
         user_role=user.role,
         )
     

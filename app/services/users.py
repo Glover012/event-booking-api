@@ -1,4 +1,4 @@
-from sqlalchemy import or_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from ..db.models import Users
@@ -18,10 +18,10 @@ class UserService:
             id: int | None = None,
             username: str | None = None,
             email: str | None = None,
-            ) -> Users | None:
+            ) -> Users:
         """
-        Get User model from database, based on credentials.
-        If no User returns None.
+        Load User model from database, based on credentials.
+        If User is not found, raise HTTP Error.
         """
 
         filters = []
@@ -35,28 +35,35 @@ class UserService:
         if not filters:
             raise ValueError("Provide at least one of: id, username, email.")
 
-        model = self.db.query(Users).filter(or_(*filters)).first()
+        model = self.db.query(Users).filter(and_(*filters)).first()
 
+        if model is None:
+            raise HTTPError.AUTHENTICATION_FAILED
         return model
 
-    def get_model_secured(
+    def find_model(
             self,
-            id: int | None = None,
             username: str | None = None,
             email: str | None = None,
-            ) -> Users:
+            ) -> bool:
         """
-        Calls get_model, but raises error when model is None. 
-        Mainly due to type checker.
+        Checks if models with provided credentials exists in db.
+        Returns True, if found, else False.
         """
-        model = self.get_model(
-            id=id,
-            username=username,
-            email=email,
-        )
-        if model is None:
-            raise HTTPError.USER_DOES_NOT_EXISTS
-        return model
+
+        filters = []
+        if username:
+            filters.append(Users.username == username)
+        if email:
+            filters.append(Users.email == email)
+        if not filters:
+            raise ValueError("Provide at least one of: username, email.")
+
+        model = self.db.query(Users).filter(or_(*filters)).first()
+
+        if model is not None:
+            return True
+        return False
 
     def confirm_available_credentials(
             self,
@@ -64,13 +71,13 @@ class UserService:
             email: str | None = None,
             ) -> bool:
         """
-        Check whether user credentials are available to assign in db.
+        Checks whether provided user credentials are free to assign in db.
         If not raises HTTP error.
         """
-        model = self.get_model(
+        found = self.find_model(
             username=username,
             email=email,
         )
-        if model:
+        if found:
             raise HTTPError.USER_ALREADY_EXISTS
         return True

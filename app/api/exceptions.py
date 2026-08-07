@@ -63,3 +63,8 @@ class HTTPError:
         status_code=status.HTTP_400_BAD_REQUEST,
         info=ApiInfo.SAME_PASSWORD,
     )
+
+    FORBIDDEN = HTTPErrorItem(
+        status_code=status.HTTP_403_FORBIDDEN,
+        info=ApiInfo.FORBIDDEN,
+    )

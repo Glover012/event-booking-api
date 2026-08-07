@@ -21,15 +21,17 @@ class PasswordHasher:
 
 
 def create_access_token(
-        user_id: int,
+        user_id: int | str,
         username: str,
+        email: str,
         user_role: str,
         ) -> str:
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
-        "sub": str(user_id), # PyJWT requires claim to be str
+        "sub": str(user_id), # PyJWT requires claims to be str
         "username": username,
+        "email": email,
         "role": user_role,
         "iat": int(now.timestamp()),
         "exp": int(expires_at.timestamp()),

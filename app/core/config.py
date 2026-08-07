@@ -23,6 +23,12 @@ class Settings(BaseSettings):
         )
 
     ### Security ###
+    BOOTSTRAP_ADMIN_USERNAME: str | None = None
+    BOOTSTRAP_ADMIN_EMAIL: str | None = None
+    BOOTSTRAP_ADMIN_FIRST_NAME: str = "System"
+    BOOTSTRAP_ADMIN_LAST_NAME: str = "Administrator"
+    BOOTSTRAP_SECRET_PATH: str = "/run/bootstrap/admin_password"
+
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30

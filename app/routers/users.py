@@ -63,4 +63,3 @@ def change_password(
     return ApiResponse[None].success(
         ApiInfo.PASSWORD_CHANGED_SUCCESSFULLY
     )
-

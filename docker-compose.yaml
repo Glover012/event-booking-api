@@ -24,6 +24,10 @@ services:
       <<: *db-env
       POSTGRES_HOST: ${POSTGRES_HOST}
       SECRET_KEY: ${SECRET_KEY}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
+    volumes:
+      - bootstrap-admin:/run/bootstrap
     ports:
       - "8000:8000"
     depends_on:
@@ -32,3 +36,4 @@ services:
 
 volumes:
   event-booking-db:
+  bootstrap-admin:

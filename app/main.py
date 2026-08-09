@@ -3,23 +3,16 @@ from fastapi import FastAPI
 from .core.config import settings
 from .routers import user_router, auth_router, health_router
 from .core.exception_handlers import register_custom_exception_handlers
-from .core.logging import FileLogging
+from .core.logging import Logger
 
-
-### File Logging Configuration ###
-def setup_app_logging() -> None:
-    FileLogging(
-        app_name=settings.APP_NAME,
-        log_dir=settings.LOG_DIR,
-        log_level=settings.LOG_LEVEL,
-        keep_files=1,
-    )
 
 ### Factory mode ###
 def create_app(enable_file_logging: bool = True) -> FastAPI:
     ### Logging ###
     if enable_file_logging:
-        setup_app_logging()
+        Logger("app")
+        Logger("access", logger_name="uvicorn.access")
+        Logger("server", logger_name="uvicorn.error")
 
     ### App ###
     app = FastAPI(

@@ -28,6 +28,7 @@ services:
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
     volumes:
       - bootstrap-admin:/run/bootstrap
+      - event-booking-logs:/var/log/event-booking
     ports:
       - "8000:8000"
     depends_on:
@@ -37,3 +38,4 @@ services:
 volumes:
   event-booking-db:
   bootstrap-admin:
+  event-booking-logs:

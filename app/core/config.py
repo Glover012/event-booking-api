@@ -22,20 +22,23 @@ class Settings(BaseSettings):
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
-    ### Security ###
+    ### Bootstrap Admin ###
     BOOTSTRAP_ADMIN_USERNAME: str | None = None
     BOOTSTRAP_ADMIN_EMAIL: str | None = None
     BOOTSTRAP_ADMIN_FIRST_NAME: str = "System"
     BOOTSTRAP_ADMIN_LAST_NAME: str = "Administrator"
     BOOTSTRAP_SECRET_PATH: str = "/run/bootstrap/admin_password"
 
+    ### Security ###
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     ### Logging ###
-    LOG_DIR: str = "logs"
-    LOG_LEVEL: str = "debug"
+    LOG_DIR: str = "/var/log/event-booking"
+    LOG_LEVEL_CONSOLE: str = "info"
+    LOG_MAX_BYTES: int = 2 * 1024 * 1024
+    LOG_BACKUP_COUNT: int = 10
 
     ### Enviornment Var Config ###
     model_config = SettingsConfigDict(

@@ -1,9 +1,7 @@
 import argparse
-import logging
-import sys
 
 from .bootstrap.admin import CreateBootstrapAdmin
-
+from .core.logging import Logger
 
 def create_bootstrap_admin(args: argparse.Namespace) -> None:
     CreateBootstrapAdmin().run()
@@ -27,6 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
+    Logger("cli")
     args.handler(args)
 
 

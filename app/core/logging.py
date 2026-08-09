@@ -1,90 +1,96 @@
 import logging
 import os
-from datetime import datetime
+from logging.handlers import RotatingFileHandler
+
+from .config import settings
 
 
-logger = logging.getLogger(__name__)
+class Logger:
+    """
+    Configures logging for a single component.
 
+    Every component writes into its own subdirectory,
+    <LOG_DIR>/<component>/<component>.log, so that app, CLI,
+    HTTP access and server logs never share a file and rotate
+    independently.
 
-class FileLogging:
-    """Configures file logging."""
-    log_dir: str
-    log_level: str
-    app_name: str
-    keep_files: int
+    With logger_name left empty the root logger is set, that is 
+    owned by the process and a console handler is added. With 
+    logger_name given, the file handler is appended to that 
+    logger, leaving its level and existing handlers untouched.
+    Uvicorn logs are set to propagate=false, therefore they don't
+    reach root logger and the handlers.
+    """
+
+    FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     def __init__(
-            self, 
-            app_name: str, 
-            log_dir: str, 
-            log_level: str, 
-            keep_files: int
-        ) -> None:
-        self.app_name = app_name
-        self.log_dir = log_dir
-        self.log_level = log_level.upper()
-        self.keep_files = int(keep_files)
+            self,
+            component: str,
+            logger_name: str | None = None,
+            ) -> None:
+        self.component = component
+        self.logger_name = logger_name # Root logger if None
+        self.log_dir = os.path.join(settings.LOG_DIR, component)
+        self.log_level_console = settings.LOG_LEVEL_CONSOLE.upper()
+        self.max_bytes = settings.LOG_MAX_BYTES
+        self.backup_count = settings.LOG_BACKUP_COUNT
+
         self.configure_logging()
-        self.cleanup_old_log_files(self.keep_files)
 
-    def cleanup_old_log_files(self, keep: int = 1) -> None:
-        """Remove old log files."""
-        log_files = []
+    @property
+    def log_file(self) -> str:
+        """
+        Returns full path of the active log file for current component.
+        """
+        return os.path.join(self.log_dir, f"{self.component}.log")
 
-        for file_name in os.listdir(self.log_dir):
-            file_path = os.path.join(self.log_dir, file_name)
-            if (
-                os.path.isfile(file_path)
-                and file_name.startswith(f"{self.app_name}")
-                and ".log" in file_name
-            ):
-                log_files.append(file_path)
+    def build_formatter(self) -> logging.Formatter:
+        """
+        Returns logging string formatter.
+        """
+        return logging.Formatter(self.FORMAT, self.DATE_FORMAT)
 
-        # Sort files in log_files by modification time
-        log_files.sort(key=os.path.getmtime, reverse=True)
+    def build_console_handler(self) -> logging.StreamHandler:
+        """
+        Console output, filtered to LOG_LEVEL_CONSOLE. These logs
+        additinally reach `docker compose logs`.
+        """
+        handler = logging.StreamHandler()
+        handler.setLevel(self.log_level_console)
+        handler.setFormatter(self.build_formatter())
+        return handler
 
-        for old_log_file in log_files[keep:]:
-            try:
-                os.remove(old_log_file)
-                logger.info("Removed old log file: %s.", old_log_file)
-            except OSError as error:
-                logger.warning("Could not remove old log file %s. Error: %s", old_log_file, error)
+    def build_file_handler(self) -> RotatingFileHandler:
+        """
+        File output, always at DEBUG. Rotates once the file grows past
+        LOG_MAX_BYTES and keeps LOG_BACKUP_COUNT number of older copies, 
+        so the directory never needs manual cleanup.
+        """
+        handler = RotatingFileHandler(
+            self.log_file,
+            maxBytes=self.max_bytes,
+            backupCount=self.backup_count,
+            encoding="utf-8",
+        )
+        handler.setLevel(logging.DEBUG)
+        handler.setFormatter(self.build_formatter())
+        return handler
 
     def configure_logging(self) -> None:
         """
-        Configure console and file logging. Log file is set to DEBUG level.
-        """
-        console_log_level = getattr(logging, self.log_level, logging.DEBUG)
+        Creates the component directory and attaches the handlers.
 
-        # If dir exist don't raise error - exist_ok=True
+        The root logger is set to DEBUG so that all logs reach the 
+        handles and then are filtered by their log level.
+        """
         os.makedirs(self.log_dir, exist_ok=True)
 
-        session_timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-        log_file = os.path.join(self.log_dir, f"{self.app_name}-{session_timestamp}.log")
+        logger = logging.getLogger(self.logger_name)
 
-        formatter = logging.Formatter(
-            fmt="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-            datefmt="%H:%M:%S",
-        )
+        if self.logger_name is None:
+            logger.setLevel(logging.DEBUG)
+            logger.addHandler(self.build_console_handler())
 
-        # StreamHanlder send logs to console
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(console_log_level)
-        console_handler.setFormatter(formatter)
-
-        file_handler = logging.FileHandler(
-            log_file,
-            mode="w",
-            encoding="utf-8",
-        )
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(formatter)
-
-        # Logs are sent to console and saved in logs dir
-        logging.basicConfig(
-            level=self.log_level,
-            handlers=[console_handler, file_handler],
-            force=True,
-        )
-
-        logger.debug("Logging configured. Session log file: %s", os.path.abspath(log_file))
+        logger.addHandler(self.build_file_handler())

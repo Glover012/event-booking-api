@@ -1,4 +1,8 @@
+from functools import cached_property
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from .secret_files import Secrets
 
 
 class Settings(BaseSettings):
@@ -9,12 +13,17 @@ class Settings(BaseSettings):
 
     ### Database connection && credentials ###
     POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     POSTGRES_HOST: str
     POSTGRES_PORT: int = 5432
 
-    @property
+    @cached_property
+    def POSTGRES_PASSWORD(self) -> str:
+        return Secrets.read_secret(
+            "postgres_password", self.SECRET_DIR
+            ).get_secret_value()
+
+    @cached_property
     def DATABASE_URL(self) -> str:
         return (
             f"postgresql+psycopg://{self.POSTGRES_USER}:"
@@ -27,12 +36,21 @@ class Settings(BaseSettings):
     BOOTSTRAP_ADMIN_EMAIL: str | None = None
     BOOTSTRAP_ADMIN_FIRST_NAME: str = "System"
     BOOTSTRAP_ADMIN_LAST_NAME: str = "Administrator"
-    BOOTSTRAP_SECRET_PATH: str = "/run/bootstrap/admin_password"
+    # Duplicated literally as the volume target in docker-compose.yaml.
+    BOOTSTRAP_SECRET_DIR: str = "/var/lib/event-booking/bootstrap"
 
     ### Security ###
-    SECRET_KEY: str
+    # Duplicated literally in docker-compose.yaml (bind mount) and setup.sh.
+    # Changing it only here makes read_secret raise SecretNotFound.
+    SECRET_DIR: str = "/var/lib/event-booking/secrets"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    @cached_property
+    def SECRET_KEY(self) -> str:
+        return Secrets.read_secret(
+            "secret_key", self.SECRET_DIR
+            ).get_secret_value()
 
     ### Logging ###
     LOG_DIR: str = "/var/log/event-booking"

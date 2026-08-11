@@ -1,6 +1,7 @@
 import logging
 import os
 import secrets
+from pathlib import Path
 
 from pydantic import SecretStr
 from sqlalchemy.exc import IntegrityError
@@ -55,7 +56,7 @@ class CreateBootstrapAdmin:
             logger.info(
                 "Admin account '%s' created. Password written to %s",
                 settings.BOOTSTRAP_ADMIN_USERNAME,
-                settings.BOOTSTRAP_SECRET_PATH,
+                settings.BOOTSTRAP_SECRET_DIR,
             )
         finally:
             self.db.close() # Flushed/non-commited transaction is rolled
@@ -120,20 +121,21 @@ class CreateBootstrapAdmin:
 
     def save_password_to_file(self, password: SecretStr) -> None:
         """
-        Writes the password to BOOTSTRAP_SECRET_PATH with 0600, so that
+        Writes the admin_password to BOOTSTRAP_SECRET_DIR with 0600, so that
         only the owner can read it.
         """
-        path = settings.BOOTSTRAP_SECRET_PATH
+        bootstrap_dir = settings.BOOTSTRAP_SECRET_DIR
         try:
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+            os.makedirs(bootstrap_dir, exist_ok=True)
 
             flags = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
-            fd = os.open(path, flags, 0o600)
+            admin_password_path = Path(bootstrap_dir) / "admin_password"
+            fd = os.open(admin_password_path, flags, 0o600)
 
             with os.fdopen(fd, "w") as file:
                 file.write(password.get_secret_value() + "\n")
 
         except PermissionError as e:
-            raise SystemExit(f"No permissions to write {path}: {e}")
+            raise SystemExit(f"No permissions to write {bootstrap_dir}: {e}")
         except OSError as e:
-            raise SystemExit(f"File-system error writing {path}: {e}")
+            raise SystemExit(f"File-system error writing {bootstrap_dir}: {e}")

@@ -1,5 +1,3 @@
-.vscode
-
 __pycache__/
 *.pyc
 
@@ -7,8 +5,12 @@ __pycache__/
 venv/
 
 .env
+.env.*
+!.env.*.example
 
 .direnv/
 
 logs/
 *.log
+
+secrets/

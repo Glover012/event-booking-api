@@ -1,3 +1,5 @@
+name: event-booking
+
 x-db-env: &db-env
   POSTGRES_USER: ${POSTGRES_USER}
   POSTGRES_DB: ${POSTGRES_DB}

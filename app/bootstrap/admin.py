@@ -1,12 +1,10 @@
 import logging
-import os
-import secrets
-from pathlib import Path
 
 from pydantic import SecretStr
 from sqlalchemy.exc import IntegrityError
 
 from ..core.config import settings
+from ..core.secret_files import SecretNotFound
 from ..core.security import PasswordHasher
 from ..db.database import SessionLocal
 from ..db.models import Users
@@ -18,8 +16,15 @@ logger = logging.getLogger(__name__)
 class CreateBootstrapAdmin:
     """
     Creates the initial admin account on application boot.
-    Runs only when the database contains no admin. The generated
-    password is written to a file once and never logged.
+    Runs only when the database contains no admin. The password may
+    be read from a file or enviornment variable. For deployment, file
+    solution must be taken. Enviornment variable in .env have priority and can
+    be used only for CI/CD and local development.
+
+        Password read priorty: enviornment > file
+
+    > After succesfull deployment, password_file must be removed from
+    a host machine.
     """
 
     def __init__(self) -> None:
@@ -27,13 +32,9 @@ class CreateBootstrapAdmin:
 
     def run(self) -> None:
         """
-        Entry point for the bootstrap admin creation. Does nothing when an 
+        Entry point for the bootstrap admin creation. Does nothing when an
         admin already exists, and fails when no credentials were
         configured, since such an instance cannot be administered.
-
-        The account is committed only after the password file is written,
-        so that a failed write leaves no admin behind and the next boot
-        retries the whole sequence.
         """
 
         try:
@@ -48,15 +49,13 @@ class CreateBootstrapAdmin:
                     "Cannot bootstrap the first admin. Set missing admin credentials."
                 )
 
-            password = self.generate_password()
-            self.create_admin(password) 
-            self.save_password_to_file(password)
+            password = self.read_password()
+            self.create_admin(password)
             self.db.commit() # Required due to flush in create_admin
 
             logger.info(
-                "Admin account '%s' created. Password written to %s",
+                "Admin account '%s' created.",
                 settings.BOOTSTRAP_ADMIN_USERNAME,
-                settings.BOOTSTRAP_SECRET_DIR,
             )
         finally:
             self.db.close() # Flushed/non-commited transaction is rolled
@@ -74,25 +73,35 @@ class CreateBootstrapAdmin:
 
     def credentials_configured(self) -> bool:
         """
-        Confirms that admin credentials were provided in .env. 
-        Names are skipped, due to defaults.
+        Confirms that admin credentials were provided in .env.
+        Names are skipped, due to defaults. The password is checked
+        separately, since it has its own two sources.
         """
         return all([
             settings.BOOTSTRAP_ADMIN_USERNAME,
             settings.BOOTSTRAP_ADMIN_EMAIL,
         ])
 
-    def generate_password(self) -> SecretStr:
+    def read_password(self) -> SecretStr:
         """
-        Generates a random password.
+        Reads the password from the environment or SECRET_DIR.
+
+        Executed only when the database has no admin present.
         """
-        return SecretStr(secrets.token_urlsafe(32))
+        try:
+            return SecretStr(settings.BOOTSTRAP_ADMIN_PASSWORD)
+        except SecretNotFound as e:
+            raise SystemExit(
+                f"No admin account found in the database and no bootstrap "
+                f"password available ({e}). Set BOOTSTRAP_ADMIN_PASSWORD or "
+                f"run setup.sh to generate the secret file."
+            )
 
     def create_admin(self, password: SecretStr) -> Users:
         """
-        Creates the admin account. Flushes changes, so that in case of 
-        errors in later steps transaction will be rolled. Raises an 
-        error when the configured username or email already belongs 
+        Creates the admin account. Flushes changes, so that in case of
+        errors in later steps, transaction will be rolled. Raises an
+        error when the configured username or email already belongs
         to another account.
 
         Requires self.db.commit() in run().
@@ -118,24 +127,3 @@ class CreateBootstrapAdmin:
                 f"'{settings.BOOTSTRAP_ADMIN_EMAIL}' already belongs "
                 f"to another account."
                 )
-
-    def save_password_to_file(self, password: SecretStr) -> None:
-        """
-        Writes the admin_password to BOOTSTRAP_SECRET_DIR with 0600, so that
-        only the owner can read it.
-        """
-        bootstrap_dir = settings.BOOTSTRAP_SECRET_DIR
-        try:
-            os.makedirs(bootstrap_dir, exist_ok=True)
-
-            flags = os.O_CREAT | os.O_WRONLY | os.O_TRUNC
-            admin_password_path = Path(bootstrap_dir) / "admin_password"
-            fd = os.open(admin_password_path, flags, 0o600)
-
-            with os.fdopen(fd, "w") as file:
-                file.write(password.get_secret_value() + "\n")
-
-        except PermissionError as e:
-            raise SystemExit(f"No permissions to write {bootstrap_dir}: {e}")
-        except OSError as e:
-            raise SystemExit(f"File-system error writing {bootstrap_dir}: {e}")

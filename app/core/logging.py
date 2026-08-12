@@ -22,7 +22,9 @@ class Logger:
     reach root logger and the handlers.
     """
 
-    FORMAT = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    FORMAT = (
+        f"%(asctime)s - [%(levelname)s] - {settings.APP_NAME.upper()}[%(name)s]: %(message)s"
+        )
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
     def __init__(

@@ -10,11 +10,11 @@ class SecretNotFound(RuntimeError):
 class Secrets:
 
     @staticmethod
-    def read_secret(name: str, secret_dir: str) -> SecretStr:
+    def read_secret(filename: str, secret_dir: str) -> SecretStr:
         """
         Reads a single secret from the secret_dir.
         """
-        path = Path(secret_dir) / name
+        path = Path(secret_dir) / filename
 
         if not path.is_file():
             raise SecretNotFound(f"Secret not found at {path}.")

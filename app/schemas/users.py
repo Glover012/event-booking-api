@@ -37,6 +37,15 @@ class UserRole(StrEnum):
     ORGANIZER = "organizer"
     USER = "user"
 
+    @property
+    def level(self) -> int:
+        return _ROLE_LEVELS[self]
+
+_ROLE_LEVELS = {
+    UserRole.USER: 10,
+    UserRole.ORGANIZER: 20,
+    UserRole.ADMIN: 30,
+}
 
 class UserResponse(BaseModel):
     """Response model with User attributes."""

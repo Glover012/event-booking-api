@@ -68,3 +68,8 @@ class HTTPError:
         status_code=status.HTTP_403_FORBIDDEN,
         info=ApiInfo.FORBIDDEN,
     )
+
+    TRANSACTION_REFUSED = HTTPErrorItem(
+        status_code=status.HTTP_409_CONFLICT,
+        info=ApiInfo.TRANSACTION_REFUSED,
+    )

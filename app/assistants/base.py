@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from ..services.users import UserService
-from ..schemas.users import ChangePasswordRequest
+from ..schemas.users import ChangePasswordRequest, UserRole
 from ..core.security import PasswordHasher
 from ..db.models import Users
 from ..api.exceptions import HTTPError
@@ -17,7 +17,7 @@ class BaseAssistant:
             db: Session,
             user_service: UserService,
             user: dict,
-            required_role: str,
+            minimum_role: UserRole,
             ) -> None:
         self.db = db
         self.service = user_service
@@ -25,14 +25,14 @@ class BaseAssistant:
         self.username = user["username"]
         self.email = user["email"]
         self.role = user["role"]
-        self.required_role = required_role
-        self.user_model = self.verify_user(required_role)
+        self.minimum_role = minimum_role
+        self.user_model = self.verify_user(minimum_role)
 
-    def verify_user(self, required_role: str) -> Users:
+    def verify_user(self, minimum_role: UserRole) -> Users:
         """
         Security function. Confirms that user data extracted 
         from JWT corresponds to record in db and
-        confirms required role.
+        confirms minimal required role.
         """
         user_model: Users = self.service.get_model(
             id=self.id,
@@ -40,10 +40,10 @@ class BaseAssistant:
             email=self.email,
         )
 
-        if user_model.role != required_role:
+        if UserRole(user_model.role).level < minimum_role.level:
             raise HTTPError.FORBIDDEN
-        else:
-            return user_model
+
+        return user_model
 
     def get_user(self) -> Users:
         return self.user_model

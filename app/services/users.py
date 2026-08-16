@@ -61,9 +61,7 @@ class UserService:
 
         model = self.db.query(Users).filter(or_(*filters)).first()
 
-        if model is not None:
-            return True
-        return False
+        return model is not None
 
     def confirm_available_credentials(
             self,

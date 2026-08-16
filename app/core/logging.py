@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from logging.handlers import RotatingFileHandler
 
 from .config import settings
@@ -25,7 +26,7 @@ class Logger:
     FORMAT = (
         f"%(asctime)s - [%(levelname)s] - {settings.APP_NAME.upper()}[%(name)s]: %(message)s"
         )
-    DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+    DATE_FORMAT = "%Y-%m-%d %H:%M:%S UTC"
 
     def __init__(
             self,
@@ -50,9 +51,11 @@ class Logger:
 
     def build_formatter(self) -> logging.Formatter:
         """
-        Returns logging string formatter.
+        Returns logging string formatter. Date format set to UTC.
         """
-        return logging.Formatter(self.FORMAT, self.DATE_FORMAT)
+        formatter = logging.Formatter(self.FORMAT, self.DATE_FORMAT)
+        formatter.converter = time.gmtime
+        return formatter
 
     def build_console_handler(self) -> logging.StreamHandler:
         """

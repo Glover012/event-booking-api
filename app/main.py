@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 
 from .core.config import settings
-from .routers import user_router, auth_router, health_router
+from .routers import (
+    user_router, 
+    auth_router, 
+    health_router,
+    event_router,
+)
 from .core.exception_handlers import register_custom_exception_handlers
 from .core.logging import Logger
 
@@ -27,5 +32,6 @@ def create_app(enable_file_logging: bool = True) -> FastAPI:
     app.include_router(user_router)
     app.include_router(auth_router)
     app.include_router(health_router)
+    app.include_router(event_router)
 
     return app

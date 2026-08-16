@@ -53,11 +53,6 @@ class ApiInfo:
         MESSAGE="Invalid credentials.",
     )
 
-    TOKEN_CREATED = ApiInfoItem(
-        CODE="TOKEN_CREATED",
-        MESSAGE="Token created successfully.",
-    )
-
     NOT_AUTHENTICATED = ApiInfoItem(
         CODE="NOT_AUTHENTICATED",
         MESSAGE="Not authenticated.",
@@ -91,4 +86,14 @@ class ApiInfo:
     FORBIDDEN = ApiInfoItem(
         CODE="FORBIDDEN",
         MESSAGE="Insufficient permissions."
+    )
+
+    EVENT_CREATED = ApiInfoItem(
+        CODE="EVENT_CREATED",
+        MESSAGE="Event created successfully.",
+    )
+
+    TRANSACTION_REFUSED = ApiInfoItem(
+        CODE="TRANSACTION_REFUSED",
+        MESSAGE="Requested transaction has been refused.",
     )

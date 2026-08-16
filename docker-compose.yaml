@@ -10,6 +10,7 @@ services:
     environment:
       <<: *db-env
       POSTGRES_PASSWORD_FILE: /var/lib/event-booking/secrets/postgres_password
+      TZ: UTC
     volumes:
       - event-booking-db:/var/lib/postgresql
       - /var/lib/event-booking/secrets:/var/lib/event-booking/secrets:ro
@@ -28,6 +29,7 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
+      TZ: UTC
     volumes:
       - /var/lib/event-booking/secrets:/var/lib/event-booking/secrets:ro
       - /var/log/event-booking:/var/log/event-booking

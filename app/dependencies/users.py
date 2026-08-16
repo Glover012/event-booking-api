@@ -4,7 +4,7 @@ import jwt
 from fastapi import Depends
 
 from ..services.users import UserService
-from ..assistants.users import UserAssistant
+from ..assistants import UserAssistant
 from ..dependencies.database import db_dependency
 from ..dependencies.auth import token_dependency
 from ..core.security import decode_access_token

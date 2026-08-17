@@ -73,3 +73,8 @@ class HTTPError:
         status_code=status.HTTP_409_CONFLICT,
         info=ApiInfo.TRANSACTION_REFUSED,
     )
+
+    EVENT_DOES_NOT_EXIST = HTTPErrorItem(
+        status_code=status.HTTP_404_NOT_FOUND,
+        info=ApiInfo.EVENT_DOES_NOT_EXIST,
+    )

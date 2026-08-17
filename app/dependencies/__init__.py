@@ -4,3 +4,5 @@ from .users import user_assistant_dependency, user_service_dependency, user_depe
 from .register import register_service_dependency
 from .organizer import organizer_assistant_dependency
 from .admin import admin_assistant_dependency
+from .events import event_service_dependency
+from .pagination import pagination_dependency

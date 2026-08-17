@@ -97,3 +97,18 @@ class ApiInfo:
         CODE="TRANSACTION_REFUSED",
         MESSAGE="Requested transaction has been refused.",
     )
+
+    EVENT_RETRIEVED = ApiInfoItem(
+        CODE="EVENT_RETRIEVED",
+        MESSAGE="Event retrieved successfully.",
+    )
+
+    EVENTS_RETRIEVED = ApiInfoItem(
+        CODE="EVENTS_RETRIEVED",
+        MESSAGE="Events retrieved successfully.",
+    )
+
+    EVENT_DOES_NOT_EXIST = ApiInfoItem(
+        CODE="EVENT_DOES_NOT_EXIST",
+        MESSAGE="Event does not exist.",
+    )

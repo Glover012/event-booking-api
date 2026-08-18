@@ -43,7 +43,7 @@ def login_for_access_token(
         db,
         )
     if user is None:
-        raise HTTPError.INVALID_CREDENTIALS
+        raise HTTPError.INVALID_CREDENTIALS()
 
     token = create_access_token(
         user_id=user.id,

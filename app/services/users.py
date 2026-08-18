@@ -38,7 +38,7 @@ class UserService:
         model = self.db.query(Users).filter(and_(*filters)).first()
 
         if model is None:
-            raise HTTPError.AUTHENTICATION_FAILED
+            raise HTTPError.AUTHENTICATION_FAILED()
         return model
 
     def find_model(
@@ -77,5 +77,5 @@ class UserService:
             email=email,
         )
         if found:
-            raise HTTPError.USER_ALREADY_EXISTS
+            raise HTTPError.USER_ALREADY_EXISTS()
         return True

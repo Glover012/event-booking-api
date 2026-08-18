@@ -41,6 +41,6 @@ class RegisterService:
 
             return new_user
 
-        except IntegrityError:
+        except IntegrityError as e:
             self.db.rollback()
-            raise HTTPError.USER_ALREADY_EXISTS
+            raise HTTPError.USER_ALREADY_EXISTS() from e

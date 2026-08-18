@@ -41,7 +41,7 @@ class BaseAssistant:
         )
 
         if UserRole(user_model.role).level < minimum_role.level:
-            raise HTTPError.FORBIDDEN
+            raise HTTPError.FORBIDDEN()
 
         return user_model
 
@@ -57,13 +57,13 @@ class BaseAssistant:
             change_password_request.old_password.get_secret_value(),
             self.user_model.hashed_password,
             ):
-            raise HTTPError.INCORRECT_PASSWORD
+            raise HTTPError.INCORRECT_PASSWORD()
 
         elif PasswordHasher.verify_password(
             change_password_request.new_password.get_secret_value(),
             self.user_model.hashed_password,
             ):
-            raise HTTPError.SAME_PASSWORD
+            raise HTTPError.SAME_PASSWORD()
 
         self.user_model.hashed_password = PasswordHasher.hash_password(
             change_password_request.new_password

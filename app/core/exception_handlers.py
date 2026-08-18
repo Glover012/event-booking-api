@@ -36,22 +36,25 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
             ).model_dump(mode="json")
 
         ### Logging ###
+        log_context = (
+            "HTTP exception: %s %s -> %s code=%s",
+            request.method,
+            request.url.path,
+            exc.status_code,
+            content.get("code"),
+        )
+        exception_info = (type(exc), exc, exc.__traceback__)
+
         if exc.status_code >= 500:
-            logger.error(
-                "HTTP exception: %s %s -> %s code=%s",
-                request.method,
-                request.url.path,
-                exc.status_code,
-                content.get("code"),
-            )
+            logger.error(*log_context, exc_info=exception_info)
+
+        # A cause is attached only where the code is explicitly raised 
+        # `from e`, so it marks an error worth a full traceback. Ordinary
+        # client mistakes carry none and stay one line in log files.
+        elif exc.__cause__ is not None:
+            logger.warning(*log_context, exc_info=exception_info)
         else:
-            logger.info(
-                "HTTP exception: %s %s -> %s code=%s",
-                request.method,
-                request.url.path,
-                exc.status_code,
-                content.get("code"),
-            )
+            logger.info(*log_context)
 
         return JSONResponse(
             status_code=exc.status_code,

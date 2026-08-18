@@ -41,7 +41,7 @@ class EventService:
         model = self.public_query().filter(Events.id == event_id).first()
 
         if model is None:
-            raise HTTPError.EVENT_DOES_NOT_EXIST
+            raise HTTPError.EVENT_DOES_NOT_EXIST()
         return model
 
     def list_public_models(

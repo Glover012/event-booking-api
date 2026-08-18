@@ -16,7 +16,7 @@ def get_current_user(token: token_dependency):
     Extract user info from JWT.
     """
     if token is None:
-        raise HTTPError.NOT_AUTHENTICATED
+        raise HTTPError.NOT_AUTHENTICATED()
 
     try:
         payload = decode_access_token(token)
@@ -30,8 +30,8 @@ def get_current_user(token: token_dependency):
         return {"id": user_id, "username": username, "email": email, "role": user_role}
 
         # PyJWTError - SuperClass for all JWT exceptions
-    except (jwt.PyJWTError, KeyError, ValueError):
-        raise HTTPError.AUTHENTICATION_FAILED
+    except (jwt.PyJWTError, KeyError, ValueError) as e:
+        raise HTTPError.AUTHENTICATION_FAILED() from e
 
 def get_user_service(db: db_dependency) -> UserService:
     return UserService(db)

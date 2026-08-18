@@ -41,6 +41,6 @@ class OrganizerAssistant(BaseAssistant):
 
             return new_event
 
-        except IntegrityError:
+        except IntegrityError as e:
             self.db.rollback()
-            raise HTTPError.TRANSACTION_REFUSED
+            raise HTTPError.TRANSACTION_REFUSED() from e

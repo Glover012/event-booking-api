@@ -1,33 +1,26 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from ..db.models import Events
+from ..schemas.events import CreateEventRequest, EventStatus
 from ..api.exceptions import HTTPError
 
 
-class EventService:
+class EventsService:
     """
-    Provide ready to use db services for Events table.
+    Provide ready to use db services for the Events table.
     """
 
     def __init__(self, db: Session):
         self.db = db
-
-    def find_event(self, name: str) -> bool:
-        """
-        Checks if an event with provided name exists in db.
-        Returns True, if found, else False.
-        """
-        model = self.db.query(Events).filter(Events.name == name).first()
-
-        return model is not None
 
     def public_query(self):
         """
         Base query for everything a client may see without authentication.
 
         Only `public` is filtered. The ck_events_draft_not_public constraint
-        makes a public draft impossible, so drafts are excluded by the
-        database and a second condition is not required here.
+        makes a public draft impossible, therefore drafts are excluded by the
+        database and any second condition is not required here.
         """
         return self.db.query(Events).filter(Events.public.is_(True))
 
@@ -53,13 +46,14 @@ class EventService:
         Returns one page of publicly visible events with the total row count
         required by the Page model and the API client.
 
-        Ordered deterministically: newest first, with id winning duel.
+        Ordered deterministically: newest first, with id breaking ties.
         Without a total order OFFSET may return the same row on two pages
         or skip one entirely.
         """
         query = self.public_query()
 
-        # Counted before limit/offset, so it describes every matching row
+        # Counted before limit/offset, so it describes every matching row,
+        # not just the page
         total = query.count()
 
         models = (
@@ -70,3 +64,35 @@ class EventService:
         )
 
         return models, total
+
+    def create(
+            self,
+            create_event_request: CreateEventRequest,
+            owner_id: int,
+            ) -> Events:
+        """
+        Inserts a new event. Owner comes from the authenticated and verified
+        organizer and status always starts as draft, so neither is taken from 
+        the request body.
+        """
+        try:
+            new_event = Events(
+                name=create_event_request.name,
+                description=create_event_request.description,
+                location=create_event_request.location,
+                capacity=create_event_request.capacity,
+                starts_at=create_event_request.starts_at,
+                ends_at=create_event_request.ends_at,
+                status=EventStatus.DRAFT.value,
+                owner_id=owner_id,
+            )
+            self.db.add(new_event)
+            self.db.commit()
+            # Reloads server_default columns
+            self.db.refresh(new_event)
+
+            return new_event
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e

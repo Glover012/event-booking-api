@@ -1,4 +1,3 @@
-from typing import ClassVar
 from enum import StrEnum
 import re
 

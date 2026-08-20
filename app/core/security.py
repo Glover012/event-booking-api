@@ -47,5 +47,8 @@ def decode_access_token(token: str) -> dict[str, Any]:
         jwt=token,
         key=settings.SECRET_KEY,
         algorithms=[settings.ALGORITHM],
+        # Protection of JWT structure
+        # Token must have 'exp' and 'sub' claims
+        options={"require": ["exp", "sub"]},
         )
     return payload

@@ -2,13 +2,13 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..services.events import EventService
+from ..services.events import EventsService
 from ..dependencies.database import db_dependency
 
 
-def get_event_service(db: db_dependency) -> EventService:
-    return EventService(db)
+def get_events_service(db: db_dependency) -> EventsService:
+    return EventsService(db)
 
 
 ### Dependencies ###
-event_service_dependency = Annotated[EventService, Depends(get_event_service)]
+events_service_dependency = Annotated[EventsService, Depends(get_events_service)]

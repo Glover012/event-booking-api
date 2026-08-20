@@ -2,50 +2,53 @@ from typing import Annotated
 
 import jwt
 from fastapi import Depends
+from pydantic import ValidationError
 
-from ..services.users import UserService
-from ..assistants import UserAssistant
+from ..services.users import UsersService
+from ..assistants.user import UserAssistant
+from ..schemas.auth import UserTokenInfo
 from ..dependencies.database import db_dependency
 from ..dependencies.auth import token_dependency
 from ..core.security import decode_access_token
 from ..api.exceptions import HTTPError
 
 
-def get_current_user(token: token_dependency):
+def get_current_user(token: token_dependency) -> UserTokenInfo:
     """
-    Extract user info from JWT.
+    Decodes the JWT and validates its claims.
+
+    A malformed token, a missing claim and a claim of the 
+    wrong type all end the same way - the client has to 
+    authenticate again.
     """
     if token is None:
         raise HTTPError.NOT_AUTHENTICATED()
 
     try:
         payload = decode_access_token(token)
+        # model_validate construct the pydantic model
+        # from a payload dict and validate the data
+        return UserTokenInfo.model_validate(payload)
 
-        # Str to Int conversion, for SQLAlchemy queries
-        user_id: int = int(payload["sub"])
-        username: str = payload["username"]
-        user_role: str = payload["role"]
-        email: str = payload["email"]
-
-        return {"id": user_id, "username": username, "email": email, "role": user_role}
-
-        # PyJWTError - SuperClass for all JWT exceptions
-    except (jwt.PyJWTError, KeyError, ValueError) as e:
+    # PyJWTError - SuperClass for all JWT exceptions
+    except (jwt.PyJWTError, ValidationError) as e:
         raise HTTPError.AUTHENTICATION_FAILED() from e
 
-def get_user_service(db: db_dependency) -> UserService:
-    return UserService(db)
+
+def get_users_service(db: db_dependency) -> UsersService:
+    return UsersService(db)
+
 
 def get_user_assistant(
-        db: db_dependency,
-        service: user_service_dependency,
-        user: user_dependency,
+        users_service: users_service_dependency,
+        user_token: current_user_dependency,
         ) -> UserAssistant:
-    return UserAssistant(db, service, user)
+    return UserAssistant(users_service, user_token)
+
 
 ### Dependencies ###
-user_dependency = Annotated[dict, Depends(get_current_user)] # User info from token
+current_user_dependency = Annotated[UserTokenInfo, Depends(get_current_user)]
 
-user_service_dependency = Annotated[UserService, Depends(get_user_service)]
+users_service_dependency = Annotated[UsersService, Depends(get_users_service)]
 
 user_assistant_dependency = Annotated[UserAssistant, Depends(get_user_assistant)]

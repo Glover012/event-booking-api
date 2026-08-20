@@ -1,8 +1,21 @@
-from ..schemas.users import UserRole 
-from .base import BaseAssistant
+from ..schemas.users import UserRole
+from ..schemas.auth import UserTokenInfo
+from ..services.events import EventsService
+from ..services.users import UsersService
+from .organizer import OrganizerAssistant
 
 
-class AdminAssistant(BaseAssistant):
+class AdminAssistant(OrganizerAssistant):
+    """
+    Helper for admin level routes.
+    """
 
-    def __init__(self, db, user_service, user) -> None:
-        super().__init__(db, user_service, user, UserRole.ADMIN)
+    MINIMUM_ROLE = UserRole.ADMIN
+
+    def __init__(
+            self,
+            users_service: UsersService,
+            user_token: UserTokenInfo,
+            events_service: EventsService,
+            ) -> None:
+        super().__init__(users_service, user_token, events_service)

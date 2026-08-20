@@ -6,11 +6,11 @@ from ..core.config import settings
 ### Health Router ###
 health_router = APIRouter(
     prefix="/health",
-    tags=["health"]
+    tags=["health"],
 )
 
 ### Endpoints ###
-@health_router.get("", status_code=status.HTTP_200_OK, tags=["Health"])
+@health_router.get("", status_code=status.HTTP_200_OK)
 def health_check():
     return {
         "status": "ok",

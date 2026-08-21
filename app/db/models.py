@@ -1,5 +1,8 @@
 from datetime import datetime
 
+from ..core.security import HashedPassword
+from .types import HashedPasswordType
+
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -33,7 +36,8 @@ class Users(Base):
     username: Mapped[str] = mapped_column(String, unique=True)
     first_name: Mapped[str] = mapped_column(String)
     last_name: Mapped[str] = mapped_column(String)
-    hashed_password: Mapped[str] = mapped_column(String)
+    # Check types.py for HashedPasswordType mechanics info
+    hashed_password: Mapped[HashedPassword] = mapped_column(HashedPasswordType)
     role: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),

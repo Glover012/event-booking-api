@@ -1,10 +1,11 @@
 from typing import Annotated
+from pydantic import SecretStr
 
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
-from ..dependencies import auth_assistant_dependency
 from ..schemas.auth import Token
+from ..dependencies import auth_assistant_dependency
 
 ### API Router ###
 auth_router = APIRouter(
@@ -23,4 +24,7 @@ def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     ) -> Token:
 
-    return auth_assistant.login(form_data.username, form_data.password)
+    return auth_assistant.login(
+        form_data.username, 
+        SecretStr(form_data.password)
+        )

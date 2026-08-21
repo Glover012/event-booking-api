@@ -32,8 +32,9 @@ class UserAssistant:
         Confirms that the token data still matches a record in db and
         that its role reaches MINIMUM_ROLE.
 
-        A missing record or insufficient role means the account was removed 
-        or degradated while the token stayed valid.
+        A missing record means the account was removed while the token
+        stayed valid, so it ends as an authentication failure. An
+        insufficient role ends as forbidden.
         """
         user_model = self.users_service.find_by_identity(
             id=self.user_token.id,
@@ -58,18 +59,20 @@ class UserAssistant:
             ) -> None:
 
         if not PasswordHasher.verify_password(
-            change_password_request.old_password.get_secret_value(),
+            change_password_request.old_password,
             self.user_model.hashed_password,
             ):
             raise HTTPError.INCORRECT_PASSWORD()
 
         if PasswordHasher.verify_password(
-            change_password_request.new_password.get_secret_value(),
+            change_password_request.new_password,
             self.user_model.hashed_password,
-            ):
+        ):
             raise HTTPError.SAME_PASSWORD()
 
         self.users_service.update_password(
             self.user_model,
-            PasswordHasher.hash_password(change_password_request.new_password),
+            PasswordHasher.hash_password(
+                change_password_request.new_password
+            ),
         )

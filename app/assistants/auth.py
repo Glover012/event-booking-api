@@ -1,3 +1,5 @@
+from pydantic import SecretStr
+
 from ..core.security import PasswordHasher, create_access_token
 from ..db.models import Users
 from ..schemas.auth import Token
@@ -15,7 +17,7 @@ class AuthAssistant:
     def __init__(self, users_service: UsersService) -> None:
         self.users_service = users_service
 
-    def login(self, username: str, password: str) -> Token:
+    def login(self, username: str, password: SecretStr) -> Token:
         """
         Exchanges credentials for an access token.
         """
@@ -30,7 +32,7 @@ class AuthAssistant:
 
         return Token(access_token=access_token, token_type="bearer")
 
-    def authenticate(self, username: str, password: str) -> Users:
+    def authenticate(self, username: str, password: SecretStr) -> Users:
         """
         Returns the account that matches the credentials.
 

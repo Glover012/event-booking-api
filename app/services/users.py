@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..db.models import Users
 from ..api.exceptions import HTTPError
-
+from ..core.security import HashedPassword
 
 class UsersService:
     """
@@ -62,15 +62,15 @@ class UsersService:
             email: str,
             first_name: str,
             last_name: str,
-            hashed_password: str,
+            hashed_password: HashedPassword,
             role: str,
             ) -> Users:
         """
         Creates a new User account. The provided password has to be already 
         hashed, therefore the plaintext never reaches this layer.
 
-        Protects from inserting User with the same credentials
-        with Unique db constraints on email and username.
+        The unique constraints on email and username are what finally
+        prevent a duplicate.
         """
 
         try:
@@ -95,10 +95,10 @@ class UsersService:
     def update_password(
             self,
             user_model: Users,
-            hashed_password: str,
+            hashed_password: HashedPassword,
             ) -> None:
         """
-        Update password on an existing account.
+        Updates the password on an existing account
         """
         try:
             user_model.hashed_password = hashed_password

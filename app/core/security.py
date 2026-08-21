@@ -12,12 +12,41 @@ class PasswordHasher:
     _PASSWORD_HASH: ClassVar[PasswordHash] = PasswordHash.recommended() # Argon2 is default
 
     @classmethod
-    def hash_password(cls, password: SecretStr) -> str:
-        return cls._PASSWORD_HASH.hash(password.get_secret_value())
-    
+    def is_hash(cls, value: str) -> bool:
+        """
+        Checks whether the string matches the format of any hasher
+        configured in PasswordHash.recommended().
+        """
+        return any(hash.identify(value) for hash in cls._PASSWORD_HASH.hashers)
+
     @classmethod
-    def verify_password(cls, password: str, hashed_password: str) -> bool:
-        return cls._PASSWORD_HASH.verify(password, hashed_password)
+    def hash_password(cls, password: SecretStr) -> HashedPassword:
+        return HashedPassword(
+            cls._PASSWORD_HASH.hash(password.get_secret_value())
+        )
+
+    @classmethod
+    def verify_password(
+        cls, password: SecretStr, hashed_password: HashedPassword) -> bool:
+        return cls._PASSWORD_HASH.verify(
+            password.get_secret_value(),
+            hashed_password.get_secret_value(),
+        )
+
+
+class HashedPassword(SecretStr):
+    """
+    Represents a hashed password. The value stays hidden from the outside,
+    since the class inherits from SecretStr.
+
+    Raises ValueError for anything the hasher does not recognise as its
+    own output, plaintext included.
+    """
+
+    def __init__(self, secret_value: str) -> None:
+        if not PasswordHasher.is_hash(secret_value):
+            raise ValueError("HashedPassword requires a password hash")
+        super().__init__(secret_value)
 
 
 def create_access_token(

@@ -2,9 +2,10 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..assistants.organizer import OrganizerAssistant
-from ..dependencies.events import events_service_dependency
-from ..dependencies.users import current_user_dependency, users_service_dependency
+from ...assistants.organizer import OrganizerAssistant
+from ..auth import current_user_dependency
+from ..services.events import events_service_dependency
+from ..services.users import users_service_dependency
 
 
 def get_organizer_assistant(

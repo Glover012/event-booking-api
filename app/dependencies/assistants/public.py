@@ -2,9 +2,9 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..assistants.public import PublicAssistant
-from ..dependencies.events import events_service_dependency
-from ..dependencies.users import users_service_dependency
+from ...assistants.public import PublicAssistant
+from ..services.events import events_service_dependency
+from ..services.users import users_service_dependency
 
 
 def get_public_assistant(

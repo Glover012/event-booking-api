@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 
 from ..schemas.auth import Token
-from ..dependencies import auth_assistant_dependency
+from ..dependencies.assistants import auth_assistant_dependency 
 
 ### API Router ###
 auth_router = APIRouter(

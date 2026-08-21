@@ -2,8 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from ..services.events import EventsService
-from ..dependencies.database import db_dependency
+from ...services.events import EventsService
+from ..database import db_dependency
 
 
 def get_events_service(db: db_dependency) -> EventsService:

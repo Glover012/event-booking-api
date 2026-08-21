@@ -1,9 +1,9 @@
 from fastapi import APIRouter, status
 
-from ..dependencies import organizer_assistant_dependency
 from ..api.response import ApiResponse
 from ..api.info import ApiInfo
 from ..schemas.events import CreateEventRequest, EventResponse
+from ..dependencies.assistants import organizer_assistant_dependency
 
 ### API Router ###
 organizer_router = APIRouter(tags=["organizer"])

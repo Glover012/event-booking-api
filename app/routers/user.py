@@ -1,9 +1,9 @@
 from fastapi import APIRouter, status
 
-from ..dependencies import user_assistant_dependency
 from ..api.response import ApiResponse
 from ..api.info import ApiInfo
 from ..schemas.users import UserResponse, ChangePasswordRequest
+from ..dependencies.assistants import user_assistant_dependency
 
 ### API Router ###
 user_router = APIRouter(tags=["user"])

@@ -95,3 +95,13 @@ class HTTPError:
         STATUS_CODE=status.HTTP_404_NOT_FOUND,
         INFO=ApiInfo.EVENT_DOES_NOT_EXIST,
     )
+
+    CANNOT_MODIFY_OWN_PERMISSIONS = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_403_FORBIDDEN,
+        INFO=ApiInfo.CANNOT_MODIFY_OWN_PERMISSIONS,
+    )
+
+    SAME_ROLE = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.SAME_ROLE,
+    )

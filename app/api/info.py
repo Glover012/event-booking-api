@@ -112,3 +112,18 @@ class ApiInfo:
         CODE="EVENT_DOES_NOT_EXIST",
         MESSAGE="Event does not exist.",
     )
+
+    CANNOT_MODIFY_OWN_PERMISSIONS = ApiInfoItem(
+        CODE="CANNOT_MODIFY_OWN_PERMISSIONS",
+        MESSAGE="Cannot target own permissions.",
+    )
+
+    SAME_ROLE = ApiInfoItem(
+        CODE="SAME_ROLE",
+        MESSAGE="Account role is the same as requested.",
+    )
+    
+    ROLE_CHANGED = ApiInfoItem(
+        CODE="ROLE_CHANGED",
+        MESSAGE="Account role changed successfully.",
+    )

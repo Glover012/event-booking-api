@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 from ..db.models import Users
 from ..api.exceptions import HTTPError
 from ..core.security import HashedPassword
+from ..schemas.users import UserRole
+
 
 class UsersService:
     """
@@ -104,6 +106,26 @@ class UsersService:
             user_model.hashed_password = hashed_password
             self.db.add(user_model)
             self.db.commit()
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def update_role(
+            self,
+            target_user_model: Users,
+            role: UserRole,
+            ) -> Users:
+        """
+        Sets a new role on an existing account.
+        """
+        try:
+            target_user_model.role = role
+            self.db.add(target_user_model)
+            self.db.commit()
+            self.db.refresh(target_user_model)
+
+            return target_user_model
 
         except IntegrityError as e:
             self.db.rollback()

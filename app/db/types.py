@@ -48,4 +48,4 @@ class HashedPasswordType(TypeDecorator):
     # Direction: Database -> Python
     # Instantiate value received from db, back into HashedPassword
     def process_result_value(self, value, dialect) -> HashedPassword:
-        return HashedPassword(value)
+        return HashedPassword(str(value))

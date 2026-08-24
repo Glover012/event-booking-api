@@ -97,3 +97,11 @@ class ChangePasswordRequest(BaseModel):
     @classmethod
     def validate_new_password(cls, new_password: SecretStr):
         return validate_password_strength(new_password)
+
+
+class ChangeRoleRequest(BaseModel):
+    """Role change request, admin only."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    role: UserRole

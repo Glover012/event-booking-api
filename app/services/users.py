@@ -113,19 +113,19 @@ class UsersService:
 
     def update_role(
             self,
-            target_user_model: Users,
+            user_model: Users,
             role: UserRole,
             ) -> Users:
         """
         Sets a new role on an existing account.
         """
         try:
-            target_user_model.role = role
-            self.db.add(target_user_model)
+            user_model.role = role
+            self.db.add(user_model)
             self.db.commit()
-            self.db.refresh(target_user_model)
+            self.db.refresh(user_model)
 
-            return target_user_model
+            return user_model
 
         except IntegrityError as e:
             self.db.rollback()

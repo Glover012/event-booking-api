@@ -59,8 +59,24 @@ class CreateEventRequest(BaseModel):
         return self
 
 
-class EventResponse(BaseModel):
-    """Response model with Event attributes."""
+class EventResponsePublic(BaseModel):
+    """Response model with public Event attributes."""
+
+    # Construct response model from SQLAlchemy model
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    description: str | None
+    location: str
+    capacity: int
+    status: EventStatus
+    starts_at: datetime
+    ends_at: datetime
+
+
+class EventResponseOwner(BaseModel):
+    """Response model with all Event attributes."""
 
     # Construct response model from SQLAlchemy model
     model_config = ConfigDict(from_attributes=True)

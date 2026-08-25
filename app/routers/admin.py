@@ -25,12 +25,12 @@ def change_user_role(
     change_role_request: ChangeRoleRequest,
     ) -> ApiResponse[UserResponse]:
 
-    user_model = admin_assistant.change_user_role(
+    target_model = admin_assistant.change_user_role(
         user_id,
         change_role_request,
     )
 
     return ApiResponse[UserResponse].success(
         ApiInfo.ROLE_CHANGED,
-        data=user_model,
+        data=target_model,
         )

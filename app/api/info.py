@@ -127,3 +127,8 @@ class ApiInfo:
         CODE="ROLE_CHANGED",
         MESSAGE="Account role changed successfully.",
     )
+
+    ME_INFO_RETRIEVED = ApiInfoItem(
+        CODE="ME_INFO_RETRIEVED",
+        MESSAGE="Me info retrieved successfully.",
+    )

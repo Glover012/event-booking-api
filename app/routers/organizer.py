@@ -2,7 +2,7 @@ from fastapi import APIRouter, status
 
 from ..api.response import ApiResponse
 from ..api.info import ApiInfo
-from ..schemas.events import CreateEventRequest, EventResponse
+from ..schemas.events import CreateEventRequest, EventResponseOwner
 from ..dependencies.assistants import organizer_assistant_dependency
 
 ### API Router ###
@@ -13,16 +13,16 @@ organizer_router = APIRouter(tags=["organizer"])
 @organizer_router.post(
         '/events',
         status_code=status.HTTP_201_CREATED,
-        response_model=ApiResponse[EventResponse],
+        response_model=ApiResponse[EventResponseOwner],
         )
 def create_event(
     organizer_assistant: organizer_assistant_dependency,
     create_event_request: CreateEventRequest,
-    ) -> ApiResponse[EventResponse]:
+    ) -> ApiResponse[EventResponseOwner]:
 
     new_event = organizer_assistant.create_event(create_event_request)
 
-    return ApiResponse[EventResponse].success(
+    return ApiResponse[EventResponseOwner].success(
         ApiInfo.EVENT_CREATED,
         data=new_event,
         )

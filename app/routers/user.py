@@ -15,15 +15,15 @@ user_router = APIRouter(tags=["user"])
         status_code=status.HTTP_200_OK,
         response_model=ApiResponse[UserResponse],
         )
-def get_user_info(
+def get_me_info(
     user_assistant: user_assistant_dependency,
     ) -> ApiResponse[UserResponse]:
 
-    user_model = user_assistant.get_user()
+    me_model = user_assistant.get_me()
 
     return ApiResponse[UserResponse].success(
-        ApiInfo.USER_RETRIEVED,
-        data=user_model,
+        ApiInfo.ME_INFO_RETRIEVED,
+        data=me_model,
         )
 
 
@@ -32,12 +32,12 @@ def get_user_info(
         status_code=status.HTTP_200_OK,
         response_model=ApiResponse[None],
         )
-def change_password(
+def change_me_password(
     user_assistant: user_assistant_dependency,
     change_password_request: ChangePasswordRequest,
     ) -> ApiResponse[None]:
 
-    user_assistant.change_password(change_password_request)
+    user_assistant.change_me_password(change_password_request)
 
     return ApiResponse[None].success(
         ApiInfo.PASSWORD_CHANGED_SUCCESSFULLY,

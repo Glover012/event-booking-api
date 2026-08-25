@@ -1,7 +1,7 @@
 from ..api.pagination import Page, PaginationParams
 from ..core.security import PasswordHasher
 from ..db.models import Events, Users
-from ..schemas.events import EventResponse
+from ..schemas.events import EventResponsePublic
 from ..schemas.users import RegisterUserRequest, UserRole
 from ..services.events import EventsService
 from ..services.users import UsersService
@@ -63,7 +63,7 @@ class PublicAssistant:
     def list_events(
             self,
             pagination: PaginationParams,
-            ) -> Page[EventResponse]:
+            ) -> Page[EventResponsePublic]:
         """
         Returns one page of publicly visible events.
 
@@ -75,7 +75,7 @@ class PublicAssistant:
             offset=pagination.offset,
         )
 
-        return Page[EventResponse].create(
+        return Page[EventResponsePublic].create(
             items=models,
             total=total,
             pagination=pagination,

@@ -1,6 +1,6 @@
 from ..schemas.events import CreateEventRequest
 from ..schemas.users import UserRole
-from ..schemas.auth import UserTokenInfo
+from ..schemas.auth import MeTokenClaims
 from ..services.events import EventsService
 from ..services.users import UsersService
 from ..db.models import Events
@@ -13,11 +13,11 @@ class OrganizerAssistant(UserAssistant):
 
     def __init__(
             self,
+            me_token_claims: MeTokenClaims,
             users_service: UsersService,
-            user_token: UserTokenInfo,
             events_service: EventsService,
             ) -> None:
-        super().__init__(users_service, user_token)
+        super().__init__(me_token_claims, users_service)
         self.events_service = events_service
 
     def create_event(
@@ -30,5 +30,5 @@ class OrganizerAssistant(UserAssistant):
         """
         return self.events_service.create(
             create_event_request,
-            owner_id=self.user_model.id,
+            owner_id=self.me_model.id,
         )

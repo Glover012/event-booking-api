@@ -3,7 +3,7 @@ from fastapi import APIRouter, status
 from ..api.response import ApiResponse
 from ..api.pagination import Page
 from ..api.info import ApiInfo
-from ..schemas.events import EventResponse
+from ..schemas.events import EventResponsePublic
 from ..schemas.users import UserResponse, RegisterUserRequest
 from ..dependencies import pagination_dependency
 from ..dependencies.assistants import public_assistant_dependency
@@ -36,16 +36,16 @@ def register_user(
 @public_router.get(
         '/events',
         status_code=status.HTTP_200_OK,
-        response_model=ApiResponse[Page[EventResponse]],
+        response_model=ApiResponse[Page[EventResponsePublic]],
         )
 def list_events(
     public_assistant: public_assistant_dependency,
     pagination: pagination_dependency,
-    ) -> ApiResponse[Page[EventResponse]]:
+    ) -> ApiResponse[Page[EventResponsePublic]]:
 
     page = public_assistant.list_events(pagination)
 
-    return ApiResponse[Page[EventResponse]].success(
+    return ApiResponse[Page[EventResponsePublic]].success(
         ApiInfo.EVENTS_RETRIEVED,
         data=page,
         )
@@ -54,16 +54,16 @@ def list_events(
 @public_router.get(
         '/events/{event_id}',
         status_code=status.HTTP_200_OK,
-        response_model=ApiResponse[EventResponse],
+        response_model=ApiResponse[EventResponsePublic],
         )
 def get_event(
     event_id: int,
     public_assistant: public_assistant_dependency,
-    ) -> ApiResponse[EventResponse]:
+    ) -> ApiResponse[EventResponsePublic]:
 
     event_model = public_assistant.get_event(event_id)
 
-    return ApiResponse[EventResponse].success(
+    return ApiResponse[EventResponsePublic].success(
         ApiInfo.EVENT_RETRIEVED,
         data=event_model,
         )

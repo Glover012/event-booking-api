@@ -3,8 +3,7 @@ from ..services.users import UsersService
 from ..core.security import PasswordHasher
 from ..db.models import Users
 from ..api.exceptions import HTTPError
-from ..schemas.auth import UserTokenInfo
-from ..schemas.users import ChangePasswordRequest, UserRole
+from ..schemas.auth import MeTokenClaims
 
 
 class UserAssistant:
@@ -20,14 +19,14 @@ class UserAssistant:
 
     def __init__(
             self,
+            me_token_claims: MeTokenClaims,
             users_service: UsersService,
-            user_token: UserTokenInfo,
             ) -> None:
+        self.me_token_claims = me_token_claims
         self.users_service = users_service
-        self.user_token = user_token
-        self.user_model = self.verify_user()
+        self.me_model = self.verify_me()
 
-    def verify_user(self) -> Users:
+    def verify_me(self) -> Users:
         """
         Confirms that the token data still matches a record in db and
         that its role reaches MINIMUM_ROLE.
@@ -36,42 +35,42 @@ class UserAssistant:
         stayed valid, so it ends as an authentication failure. An
         insufficient role ends as forbidden.
         """
-        user_model = self.users_service.find_by_identity(
-            id=self.user_token.id,
-            username=self.user_token.username,
-            email=self.user_token.email,
+        me_model = self.users_service.find_by_identity(
+            id=self.me_token_claims.id,
+            username=self.me_token_claims.username,
+            email=self.me_token_claims.email,
         )
 
-        if user_model is None:
+        if me_model is None:
             raise HTTPError.AUTHENTICATION_FAILED()
 
-        if UserRole(user_model.role).level < self.MINIMUM_ROLE.level:
+        if UserRole(me_model.role).level < self.MINIMUM_ROLE.level:
             raise HTTPError.FORBIDDEN()
 
-        return user_model
+        return me_model
 
-    def get_user(self) -> Users:
-        return self.user_model
+    def get_me(self) -> Users:
+        return self.me_model
 
-    def change_password(
+    def change_me_password(
             self,
             change_password_request: ChangePasswordRequest,
             ) -> None:
 
         if not PasswordHasher.verify_password(
             change_password_request.old_password,
-            self.user_model.hashed_password,
+            self.me_model.hashed_password,
             ):
             raise HTTPError.INCORRECT_PASSWORD()
 
         if PasswordHasher.verify_password(
             change_password_request.new_password,
-            self.user_model.hashed_password,
+            self.me_model.hashed_password,
         ):
             raise HTTPError.SAME_PASSWORD()
 
         self.users_service.update_password(
-            self.user_model,
+            self.me_model,
             PasswordHasher.hash_password(
                 change_password_request.new_password
             ),

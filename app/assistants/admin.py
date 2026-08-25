@@ -1,6 +1,6 @@
 from ..db.models import Users
 from ..schemas.users import UserRole, ChangeRoleRequest
-from ..schemas.auth import UserTokenInfo
+from ..schemas.auth import MeTokenClaims
 from ..services.events import EventsService
 from ..services.users import UsersService
 from .organizer import OrganizerAssistant
@@ -16,11 +16,11 @@ class AdminAssistant(OrganizerAssistant):
 
     def __init__(
             self,
+            me_token_claims: MeTokenClaims,
             users_service: UsersService,
-            user_token: UserTokenInfo,
             events_service: EventsService,
             ) -> None:
-        super().__init__(users_service, user_token, events_service)
+        super().__init__(me_token_claims, users_service, events_service)
 
     def change_user_role(
             self,
@@ -42,7 +42,7 @@ class AdminAssistant(OrganizerAssistant):
         # each model was delivered by the same db session, 
         # therefore SQLAlchemy identity map returns the same
         # object for the same row in db
-        if target_model is self.user_model:
+        if target_model is self.me_model:
             raise HTTPError.CANNOT_MODIFY_OWN_PERMISSIONS()
 
         if target_model.role == change_role_request.role:

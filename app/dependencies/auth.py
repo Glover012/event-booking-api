@@ -5,7 +5,7 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
 
-from ..schemas.auth import UserTokenInfo
+from ..schemas.auth import MeTokenClaims
 from ..core.security import decode_access_token
 from ..api.exceptions import HTTPError
 
@@ -18,7 +18,7 @@ oauth2_scheme = OAuth2PasswordBearer(
 token_dependency = Annotated[str | None, Depends(oauth2_scheme)] # None because auto_error is False
 
 
-def get_current_user(token: token_dependency) -> UserTokenInfo:
+def get_me_token_claims(token: token_dependency) -> MeTokenClaims:
     """
     Decodes the JWT and validates its claims.
 
@@ -33,7 +33,7 @@ def get_current_user(token: token_dependency) -> UserTokenInfo:
         payload = decode_access_token(token)
         # model_validate constructs the pydantic model
         # from a payload dict and validates the data
-        return UserTokenInfo.model_validate(payload)
+        return MeTokenClaims.model_validate(payload)
 
     # PyJWTError - SuperClass for all JWT exceptions
     except (jwt.PyJWTError, ValidationError) as e:
@@ -41,4 +41,6 @@ def get_current_user(token: token_dependency) -> UserTokenInfo:
 
 
 ### Dependencies ###
-current_user_dependency = Annotated[UserTokenInfo, Depends(get_current_user)]
+me_token_claims_dependency = Annotated[
+    MeTokenClaims, Depends(get_me_token_claims)
+]

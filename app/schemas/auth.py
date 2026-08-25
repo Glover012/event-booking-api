@@ -9,7 +9,7 @@ class Token(BaseModel):
     token_type: str
 
 
-class UserTokenInfo(BaseModel):
+class MeTokenClaims(BaseModel):
     """
     Claims carried by an access token, after validation.
 

@@ -1,8 +1,5 @@
 from ..db.models import Users
 from ..schemas.users import UserRole, ChangeRoleRequest
-from ..schemas.auth import MeTokenClaims
-from ..services.events import EventsService
-from ..services.users import UsersService
 from .organizer import OrganizerAssistant
 from ..api.exceptions import HTTPError
 
@@ -13,14 +10,6 @@ class AdminAssistant(OrganizerAssistant):
     """
 
     MINIMUM_ROLE = UserRole.ADMIN
-
-    def __init__(
-            self,
-            me_token_claims: MeTokenClaims,
-            users_service: UsersService,
-            events_service: EventsService,
-            ) -> None:
-        super().__init__(me_token_claims, users_service, events_service)
 
     def change_user_role(
             self,

@@ -1,8 +1,8 @@
 """Initial database structure
 
-Revision ID: a7f688c5a676
+Revision ID: 48c08f9d6c04
 Revises: 
-Create Date: 2026-08-16 17:47:39.253056
+Create Date: 2026-08-25 20:57:07.963300
 
 """
 from typing import Sequence, Union
@@ -11,8 +11,10 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+import app.db.types
+
 # revision identifiers, used by Alembic.
-revision: str = 'a7f688c5a676'
+revision: str = '48c08f9d6c04'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,7 +29,7 @@ def upgrade() -> None:
     sa.Column('username', sa.String(), nullable=False),
     sa.Column('first_name', sa.String(), nullable=False),
     sa.Column('last_name', sa.String(), nullable=False),
-    sa.Column('hashed_password', sa.String(), nullable=False),
+    sa.Column('hashed_password', app.db.types.HashedPasswordType(), nullable=False),
     sa.Column('role', sa.String(), nullable=False),
     sa.Column('created_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', postgresql.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -73,6 +75,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_index('ix_bookings_event_confirmed', 'bookings', ['event_id', 'ticket_amount'], unique=False, postgresql_where=sa.text("status = 'confirmed'"))
     op.create_index('ix_bookings_event_id', 'bookings', ['event_id'], unique=False)
     op.create_index('ix_bookings_user_id', 'bookings', ['user_id'], unique=False)
     op.create_index('uq_bookings_active', 'bookings', ['user_id', 'event_id'], unique=True, postgresql_where=sa.text("status = 'confirmed'"))
@@ -121,6 +124,7 @@ def downgrade() -> None:
     op.drop_index('uq_bookings_active', table_name='bookings', postgresql_where=sa.text("status = 'confirmed'"))
     op.drop_index('ix_bookings_user_id', table_name='bookings')
     op.drop_index('ix_bookings_event_id', table_name='bookings')
+    op.drop_index('ix_bookings_event_confirmed', table_name='bookings', postgresql_where=sa.text("status = 'confirmed'"))
     op.drop_table('bookings')
     op.drop_index('ix_events_status', table_name='events')
     op.drop_index('ix_events_starts_at', table_name='events')

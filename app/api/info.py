@@ -132,3 +132,48 @@ class ApiInfo:
         CODE="ME_INFO_RETRIEVED",
         MESSAGE="Me info retrieved successfully.",
     )
+
+    ME_PROFILE_UPDATED = ApiInfoItem(
+        CODE="ME_PROFILE_UPDATED",
+        MESSAGE="Profile updated successfully.",
+    )
+
+    BOOKING_CREATED = ApiInfoItem(
+        CODE="BOOKING_CREATED",
+        MESSAGE="Ticket booked successfully.",
+    )
+
+    BOOKING_ALREADY_EXISTS = ApiInfoItem(
+        CODE="BOOKING_ALREADY_EXISTS",
+        MESSAGE="Event is already booked by this account.",
+    )
+
+    EVENT_NOT_BOOKABLE = ApiInfoItem(
+        CODE="EVENT_NOT_BOOKABLE",
+        MESSAGE="Event does not accept bookings.",
+    )
+
+    NOT_ENOUGH_TICKETS = ApiInfoItem(
+        CODE="NOT_ENOUGH_TICKETS",
+        MESSAGE="Not enough tickets left for this event.",
+    )
+
+    ME_BOOKINGS_RETRIEVED = ApiInfoItem(
+        CODE="ME_BOOKINGS_RETRIEVED",
+        MESSAGE="Bookings retrieved successfully.",
+    )
+
+    BOOKING_CANCELLED = ApiInfoItem(
+        CODE="BOOKING_CANCELLED",
+        MESSAGE="Booking cancelled successfully.",
+    )
+
+    BOOKING_DOES_NOT_EXIST = ApiInfoItem(
+        CODE="BOOKING_DOES_NOT_EXIST",
+        MESSAGE="Booking does not exist.",
+    )
+
+    BOOKING_ALREADY_CANCELLED = ApiInfoItem(
+        CODE="BOOKING_ALREADY_CANCELLED",
+        MESSAGE="Booking is already cancelled.",
+    )

@@ -130,3 +130,27 @@ class UsersService:
         except IntegrityError as e:
             self.db.rollback()
             raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def update_profile(
+            self,
+            user_model: Users,
+            first_name: str,
+            last_name: str,
+            ) -> Users:
+        """
+        Updates the editable profile fields on an existing account.
+
+        Email and username are not touched here.
+        """
+        try:
+            user_model.first_name = first_name
+            user_model.last_name = last_name
+            self.db.add(user_model)
+            self.db.commit()
+            self.db.refresh(user_model)
+
+            return user_model
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e

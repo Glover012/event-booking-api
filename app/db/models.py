@@ -127,6 +127,12 @@ class Bookings(Base):
             unique=True,
             postgresql_where=text("status = 'confirmed'"),
         ),
+        Index(
+        "ix_bookings_event_confirmed",
+        "event_id",
+        "ticket_amount",
+        postgresql_where=text("status = 'confirmed'"),
+        ),
         Index("ix_bookings_user_id", "user_id"),
         Index("ix_bookings_event_id", "event_id"),
     )

@@ -47,8 +47,8 @@ class EventsService:
         required by the Page model and the API client.
 
         Ordered deterministically: newest first, with id breaking ties.
-        Without a total order OFFSET may return the same row on two pages
-        or skip one entirely.
+        Without a deterministic order OFFSET may return the same row on 
+        two pages or skip one entirely.
         """
         query = self.public_query()
 
@@ -96,3 +96,22 @@ class EventsService:
         except IntegrityError as e:
             self.db.rollback()
             raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def get_bookable_model_for_update(self, event_id: int) -> Events:
+        """
+        BOOKING PATH
+        ---
+        Loads a publicly visible event and locks its row until the
+        transaction ends. All subsequent booking attemps on the
+        same event will be added to queue.
+        """
+        model = (
+            self.public_query()
+            .filter(Events.id == event_id)
+            .with_for_update()
+            .first()
+        )
+
+        if model is None:
+            raise HTTPError.EVENT_DOES_NOT_EXIST()
+        return model

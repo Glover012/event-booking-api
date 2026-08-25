@@ -66,9 +66,9 @@ class PublicAssistant:
             ) -> Page[EventResponsePublic]:
         """
         Returns one page of publicly visible events.
-
-        The page envelope is built here rather than in the router, so every
-        list endpoint stays a single call plus the ApiResponse wrapper.
+        
+        The page is built here, not in the router, so every listing endpoint
+        just wraps the data in ApiResponse.
         """
         models, total = self.events_service.list_public_models(
             limit=pagination.per_page,

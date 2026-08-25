@@ -105,3 +105,21 @@ class ChangeRoleRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     role: UserRole
+
+
+class UpdateProfileRequest(BaseModel):
+    """Profile edit form. Email, username and id stay out of reach."""
+
+    model_config = ConfigDict(
+        extra="forbid"
+        ) # No additional parameters allowed
+
+    first_name: str = Field(min_length=1, max_length=32)
+    last_name: str = Field(min_length=1, max_length=32)
+
+    @field_validator("first_name", "last_name", mode="before")
+    @classmethod
+    def strip_text_fields(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value

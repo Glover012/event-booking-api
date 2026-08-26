@@ -1,9 +1,9 @@
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..db.models import Bookings
-from ..schemas.bookings import BookingStatus
+from ..db.models import Bookings, Users
+from ..schemas.bookings import BookingStatus, BookingStatusFilter
 from ..api.exceptions import HTTPError
 
 
@@ -134,3 +134,56 @@ class BookingsService:
         except IntegrityError as e:
             self.db.rollback()
             raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def list_event_bookings_detailed_models(
+            self,
+            event_id: int,
+            booking_status: BookingStatusFilter,
+            limit: int,
+            offset: int,
+            ) -> tuple[list[Row], int]:
+        """
+        Returns one page of the event's bookings joined with the User account
+        behind each of them, with the total row count required by the Page
+        model and the API client.
+
+        Result is row that ParticipantResponse reads through from_attributes.
+        Each column is specifically selected, therefore unused and critical 
+        data, like password, aren't taken from the database.
+
+        Ordered deterministically: newest first, with id breaking ties.
+        """
+        filters = [Bookings.event_id == event_id]
+
+        # This condition is mandatory, because there is no `all` status
+        # in the Bookings.status column. Appending such a filter would
+        # match nothing and quietly return an empty page.
+        if booking_status is not BookingStatusFilter.ALL:
+            filters.append(Bookings.status == booking_status.value)
+
+        # Count bookings based on filters, before join and
+        # before limit/offset, so it describes every 
+        # matching row, not just the page
+        total = self.db.query(Bookings).filter(and_(*filters)).count()
+
+        models = (
+            self.db.query(
+                Bookings.id.label("booking_id"),
+                Bookings.ticket_amount,
+                Bookings.status,
+                Bookings.created_at,
+                Users.id.label("user_id"),
+                Users.username,
+                Users.first_name,
+                Users.last_name,
+                Users.email,
+            )
+            .join(Users, Bookings.user_id == Users.id)
+            .filter(and_(*filters))
+            .order_by(Bookings.created_at.desc(), Bookings.id.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        return models, total

@@ -177,3 +177,13 @@ class ApiInfo:
         CODE="BOOKING_ALREADY_CANCELLED",
         MESSAGE="Booking is already cancelled.",
     )
+
+    ME_EVENTS_RETRIEVED = ApiInfoItem(
+        CODE="ME_EVENTS_RETRIEVED",
+        MESSAGE="Own events retrieved successfully.",
+    )
+
+    PARTICIPANTS_RETRIEVED = ApiInfoItem(
+        CODE="PARTICIPANTS_RETRIEVED",
+        MESSAGE="Participants retrieved successfully.",
+    )

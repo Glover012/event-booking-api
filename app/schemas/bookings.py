@@ -1,8 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
-
+from pydantic import BaseModel, ConfigDict, Field, EmailStr
 
 
 class BookingStatus(StrEnum):
@@ -34,3 +33,29 @@ class BookingResponse(BaseModel):
     ticket_amount: int
     status: BookingStatus
     created_at: datetime
+
+
+class BookingStatusFilter(StrEnum):
+    """Query filter for the participant list. ALL drops the condition."""
+
+    ALL = "all"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+
+
+class ParticipantResponse(BaseModel):
+    """One booking together with the account that made it."""
+
+    # A column select returns rows carrying the labels as attributes,
+    # so this model is built straight off the join
+    model_config = ConfigDict(from_attributes=True)
+
+    booking_id: int
+    ticket_amount: int
+    status: BookingStatus
+    created_at: datetime
+    user_id: int
+    username: str
+    first_name: str
+    last_name: str
+    email: EmailStr

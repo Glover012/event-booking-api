@@ -1,3 +1,4 @@
+from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -115,3 +116,54 @@ class EventsService:
         if model is None:
             raise HTTPError.EVENT_DOES_NOT_EXIST()
         return model
+
+    def get_user_owned_model(self, owner_id: int, event_id: int) -> Events:
+        """
+        Returns the event model only that belongs to 
+        User.
+
+        Raise the same error when event doesn't exists and 
+        when it belongs to different User.
+        """
+        event_model = self.db.query(Events).filter(
+            and_(
+                Events.id == event_id,
+                Events.owner_id == owner_id
+            ),
+        ).first()
+
+        if event_model is None:
+            raise HTTPError.EVENT_DOES_NOT_EXIST()
+        return event_model
+
+    def list_user_owned_models(
+            self,
+            owner_id: int,
+            limit: int,
+            offset: int,
+            ) -> tuple[list[Events], int]:
+        """
+        Returns one page of the events the account owns with the total row
+        count required by the Page model and the API client.
+
+        public_query is not reused here, since the owner has to see all
+        its events, including the Drafts. A draft is what gets published later.
+
+        Ordered deterministically: newest first, with id breaking ties.
+        Without a deterministic order OFFSET may return the same row on two
+        pages or skip one entirely.
+        """
+        query = self.db.query(Events).filter(Events.owner_id == owner_id)
+
+        # Counted before limit/offset, so it describes every matching row,
+        # not just the page
+        total = query.count()
+
+        models = (
+            query.order_by(Events.starts_at.desc(), Events.id.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        return models, total

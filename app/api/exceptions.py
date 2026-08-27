@@ -12,7 +12,7 @@ from .response import ApiResponse
 class HTTPErrorItem:
     """
     HTTPException factory for fast raising HTTP Exception across API. 
-    Status code, detail and optional headers.
+    Status code, detail, optional headers and error data for Client.
 
     Returns HTTPException object.
     """
@@ -21,10 +21,10 @@ class HTTPErrorItem:
     INFO: ApiInfoItem
     HEADERS: dict[str, str] | None = None
 
-    def __call__(self) -> HTTPException:
+    def __call__(self, data: object | None = None) -> HTTPException:
         return HTTPException(
             status_code=self.STATUS_CODE,
-            detail=ApiResponse.fail(self.INFO),
+            detail=ApiResponse.fail(self.INFO, data=data),
             headers=self.HEADERS,
         )
 
@@ -32,6 +32,8 @@ class HTTPErrorItem:
 class HTTPError:
     """
     Collection of predefined ready to use standard HTTP Errors.
+    Data has to be JSON serializable (dict, list, enum), otherwise it 
+    fails while the handler builds the response and the client gets a 500.
 
     Raise them by calling:
 
@@ -41,6 +43,14 @@ class HTTPError:
 
         except IntegrityError as e:
             raise HTTPError.TRANSACTION_REFUSED() from e
+
+    With additional `data` attached:
+
+            raise HTTPError.INVALID_STATUS_TRANSITION({
+                "current": current_status,
+                "allowed": sorted(current_status.next_statuses),
+            })
+            )
     """
 
     AUTHENTICATION_FAILED = HTTPErrorItem(
@@ -129,4 +139,54 @@ class HTTPError:
     BOOKING_ALREADY_CANCELLED = HTTPErrorItem(
         STATUS_CODE=status.HTTP_409_CONFLICT,
         INFO=ApiInfo.BOOKING_ALREADY_CANCELLED,
+    )
+
+    SAME_STATUS = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.SAME_STATUS,
+    )
+
+    INVALID_STATUS_TRANSITION = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.INVALID_STATUS_TRANSITION,
+    )
+
+    EVENT_ALREADY_PUBLISHED = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.EVENT_ALREADY_PUBLISHED,
+    )
+
+    EVENT_NOT_PUBLISHABLE = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.EVENT_NOT_PUBLISHABLE,
+    )
+
+    EVENT_DATES_LOCKED_BY_BOOKINGS = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.EVENT_DATES_LOCKED_BY_BOOKINGS,
+    )
+
+    EVENT_NOT_EDITABLE = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.EVENT_NOT_EDITABLE,
+    )
+
+    CAPACITY_BELOW_BOOKED_TICKETS = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.CAPACITY_BELOW_BOOKED_TICKETS,
+    )
+
+    EVENT_ALREADY_CANCELLED = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.EVENT_ALREADY_CANCELLED,
+    )
+
+    EVENT_NOT_CANCELLABLE = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.EVENT_NOT_CANCELLABLE,
+    )
+
+    EVENT_NOT_DELETABLE = HTTPErrorItem(
+        STATUS_CODE=status.HTTP_409_CONFLICT,
+        INFO=ApiInfo.EVENT_NOT_DELETABLE,
     )

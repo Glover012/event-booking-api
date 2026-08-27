@@ -2,8 +2,9 @@ from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..db.models import Events
-from ..schemas.events import CreateEventRequest, EventStatus
+from ..db.models import Events, Bookings
+from ..schemas.events import CreateEventRequest, EventStatus, UpdateEventRequest
+from ..schemas.bookings import BookingStatus
 from ..api.exceptions import HTTPError
 
 
@@ -117,20 +118,32 @@ class EventsService:
             raise HTTPError.EVENT_DOES_NOT_EXIST()
         return model
 
-    def get_user_owned_model(self, owner_id: int, event_id: int) -> Events:
+    def get_user_owned_model(
+            self,
+            owner_id: int,
+            event_id: int,
+            for_update: bool = False,
+            ) -> Events:
         """
-        Returns the event model only that belongs to 
-        User.
+        Returns the event model only that belongs to the User.
 
-        Raise the same error when event doesn't exists and 
+        Raise the same error when event doesn't exists and
         when it belongs to different User.
+
+        `for_update=True` additionaly locks the `Events` row until
+        the transaction ends, the same way the booking path does.
         """
-        event_model = self.db.query(Events).filter(
+        query = self.db.query(Events).filter(
             and_(
                 Events.id == event_id,
                 Events.owner_id == owner_id
             ),
-        ).first()
+        )
+
+        if for_update:
+            query = query.with_for_update()
+
+        event_model = query.first()
 
         if event_model is None:
             raise HTTPError.EVENT_DOES_NOT_EXIST()
@@ -167,3 +180,133 @@ class EventsService:
         )
 
         return models, total
+
+    def update_status(
+            self,
+            event_model: Events,
+            status: EventStatus,
+            ) -> Events:
+        """
+        Set a new status on an existing event.
+
+        Legal transitions are determined by the assistant.
+        """
+        try:
+            event_model.status = status.value
+            self.db.add(event_model)
+            self.db.commit()
+            self.db.refresh(event_model)
+
+            return event_model
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def publish(self, event_model: Events) -> Events:
+        """
+        Marks an event as publicly visible.
+
+        Terminal operation that cannot be undone.
+        """
+        try:
+            event_model.public = True
+            self.db.add(event_model)
+            self.db.commit()
+            self.db.refresh(event_model)
+
+            return event_model
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def update(
+            self,
+            event_model: Events,
+            update_event_request: UpdateEventRequest,
+            ) -> Events:
+        """
+        Update editable columns of an existing event.
+
+        status and public are configurable thorught their designated
+        functions.
+        """
+        try:
+            event_model.name = update_event_request.name
+            event_model.description = update_event_request.description
+            event_model.location = update_event_request.location
+            event_model.capacity = update_event_request.capacity
+            event_model.starts_at = update_event_request.starts_at
+            event_model.ends_at = update_event_request.ends_at
+
+            self.db.add(event_model)
+            self.db.commit()
+            self.db.refresh(event_model)
+
+            return event_model
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def cancel(self, event_model: Events) -> Events:
+        """
+        Cancel an event together with every confirmed booking on it.
+
+        This service method updates also `Bookings` table, since canceling
+        an event must cancel confirmed bookings and all must be proceeded
+        in a single transaction.
+
+        The bookings are updated with a single UPDATE.
+        `Bookings` table may contain thousands of records, therfore
+        any attempt to read them is not advised. For that reason
+        synchronize_session is set to False.
+        """
+        try:
+            self.db.query(Bookings).filter(
+                and_(
+                    Bookings.event_id == event_model.id,
+                    Bookings.status == BookingStatus.CONFIRMED.value,
+                ),
+            ).update(
+                {Bookings.status: BookingStatus.CANCELLED.value},
+                synchronize_session=False,
+            )
+            # synchronize_session=False, because with the default 'auto' the
+            # ORM tries 'evaluate'. It rebuilds the WHERE condition as
+            # a Python function to synchronize objects already in the session.
+            # Since we never read those objects, that synchronization is pointless.
+            # Whats more important is that when 'evaluate' raises
+            # UnevaluatableError, the ORM goes to 'fetch' and attaches
+            # RETURNING on postgres, so the UPDATE hands back the primary key
+            # of every modified row only for all of them to be discarded.
+            # That happens whenever SQLAlchemy cannot build a Python function
+            # from the WHERE condition, e.g. a subquery or a SQL function.
+
+            event_model.status = EventStatus.CANCELLED.value
+            self.db.add(event_model)
+            self.db.commit()
+            self.db.refresh(event_model)
+
+            return event_model
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def delete(self, event_model: Events) -> None:
+        """
+        Removes an event row. Only for drafts, which cannot be public 
+        and therefore cannot be booked, so nothing references it. 
+        
+        Additionally ON DELETE RESTRICT on bookings.event_id stays as the
+        another protection layer.
+        """
+        try:
+            self.db.delete(event_model)
+            self.db.commit()
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e

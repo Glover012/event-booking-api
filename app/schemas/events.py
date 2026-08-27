@@ -8,8 +8,25 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 class EventStatus(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
+    LOCKED = "locked"
     FINISHED = "finished"
     CANCELLED = "cancelled"
+
+    @property
+    def next_statuses(self) -> frozenset[EventStatus]:
+        return _ALLOWED_TRANSITIONS[self]
+
+
+# Cancelling has no counterpart, since it has to cancel the bookings along
+# with the event, so it goes through its own endpoint and nothing else.
+# Finished and cancelled statuses are terminal.
+_ALLOWED_TRANSITIONS = {
+    EventStatus.DRAFT: frozenset({EventStatus.ACTIVE}),
+    EventStatus.ACTIVE: frozenset({EventStatus.LOCKED, EventStatus.FINISHED}),
+    EventStatus.LOCKED: frozenset({EventStatus.ACTIVE}),
+    EventStatus.FINISHED: frozenset(),
+    EventStatus.CANCELLED: frozenset(),
+}
 
 
 class CreateEventRequest(BaseModel):
@@ -91,3 +108,21 @@ class EventResponseOwner(BaseModel):
     owner_id: int
     starts_at: datetime
     ends_at: datetime
+
+
+class ChangeEventStatusRequest(BaseModel):
+    """Event status change request. Cancelling has its own endpoint."""
+
+    model_config = ConfigDict(
+        extra="forbid"
+        ) # No additional parameters allowed
+
+    status: EventStatus
+
+class UpdateEventRequest(CreateEventRequest):
+    """
+    Event edit form. Same shape as event creation.
+
+    Status and public visibility are absent, since each is configured 
+    by designated endpoint.
+    """

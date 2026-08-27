@@ -59,7 +59,7 @@ class Events(Base):
             name="ck_events_ends_after_starts",
         ),
         CheckConstraint(
-            "status IN ('draft', 'active', 'finished', 'cancelled')",
+            "status IN ('draft', 'active', 'finished', 'cancelled', 'locked')",
             name="ck_events_status",
         ),
         CheckConstraint(

@@ -187,3 +187,78 @@ class ApiInfo:
         CODE="PARTICIPANTS_RETRIEVED",
         MESSAGE="Participants retrieved successfully.",
     )
+
+    EVENT_STATUS_CHANGED = ApiInfoItem(
+        CODE="EVENT_STATUS_CHANGED",
+        MESSAGE="Event status changed successfully.",
+    )
+
+    SAME_STATUS = ApiInfoItem(
+        CODE="SAME_STATUS",
+        MESSAGE="Event already holds the requested status.",
+    )
+
+    INVALID_STATUS_TRANSITION = ApiInfoItem(
+        CODE="INVALID_STATUS_TRANSITION",
+        MESSAGE="Event cannot move to the requested status.",
+    )
+
+    EVENT_PUBLISHED = ApiInfoItem(
+        CODE="EVENT_PUBLISHED",
+        MESSAGE="Event published successfully.",
+    )
+
+    EVENT_ALREADY_PUBLISHED = ApiInfoItem(
+        CODE="EVENT_ALREADY_PUBLISHED",
+        MESSAGE="Event is already published.",
+    )
+
+    EVENT_NOT_PUBLISHABLE = ApiInfoItem(
+        CODE="EVENT_NOT_PUBLISHABLE",
+        MESSAGE="Only an active event can be published.",
+    )
+
+    EVENT_UPDATED = ApiInfoItem(
+        CODE="EVENT_UPDATED",
+        MESSAGE="Event updated successfully.",
+    )
+
+    EVENT_DATES_LOCKED_BY_BOOKINGS = ApiInfoItem(
+        CODE="EVENT_DATES_LOCKED_BY_BOOKINGS",
+        MESSAGE="Event dates cannot change once tickets are booked.",
+    )
+
+    EVENT_NOT_EDITABLE = ApiInfoItem(
+        CODE="EVENT_NOT_EDITABLE",
+        MESSAGE="Finished and cancelled events cannot be edited.",
+    )
+
+    CAPACITY_BELOW_BOOKED_TICKETS = ApiInfoItem(
+        CODE="CAPACITY_BELOW_BOOKED_TICKETS",
+        MESSAGE="Capacity cannot be lower than the tickets already booked.",
+    )
+
+    EVENT_CANCELLED = ApiInfoItem(
+        CODE="EVENT_CANCELLED",
+        MESSAGE="Event cancelled successfully.",
+    )
+
+    EVENT_ALREADY_CANCELLED = ApiInfoItem(
+        CODE="EVENT_ALREADY_CANCELLED",
+        MESSAGE="Event is already cancelled.",
+    )
+
+    EVENT_NOT_CANCELLABLE = ApiInfoItem(
+        CODE="EVENT_NOT_CANCELLABLE",
+        MESSAGE="A finished event cannot be cancelled.",
+    )
+
+    EVENT_DELETED = ApiInfoItem(
+        CODE="EVENT_DELETED",
+        MESSAGE="Event deleted successfully.",
+    )
+
+    EVENT_NOT_DELETABLE = ApiInfoItem(
+        CODE="EVENT_NOT_DELETABLE",
+        MESSAGE="Only a draft can be deleted.",
+    )

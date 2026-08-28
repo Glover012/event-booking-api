@@ -310,3 +310,47 @@ class EventsService:
         except IntegrityError as e:
             self.db.rollback()
             raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def get_model(self, event_id: int) -> Events:
+        """
+        Loads any event by id, whatever its owner, status or visibility.
+
+        The only read function with no filter on query. Everything else narrows
+        the result by visibility, by owner, or by both.
+        """
+        model = self.db.query(Events).filter(Events.id == event_id).first()
+
+        if model is None:
+            raise HTTPError.EVENT_DOES_NOT_EXIST()
+        return model
+
+    def list_models(
+            self,
+            limit: int,
+            offset: int,
+            ) -> tuple[list[Events], int]:
+        """
+        Returns one page of every event with the total row count required
+        by the Page model and the API client.
+
+        Drafts, cancelled and unpublished events are all included - this is
+        the only listing that sees the whole table.
+
+        Ordered deterministically: newest first, with id breaking ties.
+        Without a deterministic order OFFSET may return the same row on two
+        pages or skip one entirely.
+        """
+        query = self.db.query(Events)
+
+        # Counted before limit/offset, so it describes every matching row,
+        # not just the page
+        total = query.count()
+
+        models = (
+            query.order_by(Events.starts_at.desc(), Events.id.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        return models, total

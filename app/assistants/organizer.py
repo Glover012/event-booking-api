@@ -30,6 +30,15 @@ class OrganizerAssistant(UserAssistant):
             owner_id=self.me_model.id,
         )
 
+    def get_me_event(self, event_id: int) -> Events:
+        """
+        Returns callers own event with detailed info.
+        """
+        return self.events_service.get_user_owned_model(
+            owner_id=self.me_model.id,
+            event_id=event_id,
+        )
+
     def list_me_events(
             self,
             pagination: PaginationParams,

@@ -76,6 +76,15 @@ class CreateEventRequest(BaseModel):
         return self
 
 
+class UpdateEventRequest(CreateEventRequest):
+    """
+    Event edit form. Same shape as event creation.
+
+    Status and public visibility are absent, since each is configured 
+    by designated endpoint.
+    """
+
+
 class EventResponsePublic(BaseModel):
     """Response model with public Event attributes."""
 
@@ -92,22 +101,11 @@ class EventResponsePublic(BaseModel):
     ends_at: datetime
 
 
-class EventResponseOwner(BaseModel):
+class EventResponseOwner(EventResponsePublic):
     """Response model with all Event attributes."""
 
-    # Construct response model from SQLAlchemy model
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    name: str
-    description: str | None
-    location: str
-    capacity: int
     public: bool
-    status: EventStatus
     owner_id: int
-    starts_at: datetime
-    ends_at: datetime
 
 
 class ChangeEventStatusRequest(BaseModel):
@@ -118,11 +116,3 @@ class ChangeEventStatusRequest(BaseModel):
         ) # No additional parameters allowed
 
     status: EventStatus
-
-class UpdateEventRequest(CreateEventRequest):
-    """
-    Event edit form. Same shape as event creation.
-
-    Status and public visibility are absent, since each is configured 
-    by designated endpoint.
-    """

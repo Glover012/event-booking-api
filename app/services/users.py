@@ -154,3 +154,34 @@ class UsersService:
         except IntegrityError as e:
             self.db.rollback()
             raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def list_models(
+            self,
+            limit: int,
+            offset: int,
+            ) -> tuple[list[Users], int]:
+        """
+        Returns one page of accounts with the total row count required by
+        the Page model and the API client.
+
+        No filter here - the admin listing covers every account, the caller's
+        own included.
+
+        Ordered deterministically: newest first, with id breaking ties.
+        Without a deterministic order OFFSET may return the same row on two
+        pages or skip one entirely.
+        """
+        query = self.db.query(Users)
+
+        # Counted before limit/offset, so it describes every matching row,
+        # not just the page
+        total = query.count()
+
+        models = (
+            query.order_by(Users.created_at.desc(), Users.id.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        return models, total

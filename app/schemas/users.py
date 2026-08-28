@@ -40,11 +40,13 @@ class UserRole(StrEnum):
     def level(self) -> int:
         return _ROLE_LEVELS[self]
 
+
 _ROLE_LEVELS = {
     UserRole.USER: 10,
     UserRole.ORGANIZER: 20,
     UserRole.ADMIN: 30,
 }
+
 
 class UserResponse(BaseModel):
     """Response model with User attributes."""
@@ -57,6 +59,15 @@ class UserResponse(BaseModel):
     role: UserRole
     first_name: str
     last_name: str
+
+
+class UserResponseAdmin(UserResponse):
+    """
+    Response model with User attributes including db id.
+    Only for Admin usage.
+    """
+
+    id: int
 
 
 class RegisterUserRequest(BaseModel):

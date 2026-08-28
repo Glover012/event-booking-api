@@ -203,6 +203,11 @@ class ApiInfo:
         MESSAGE="Event cannot move to the requested status.",
     )
 
+    ME_EVENT_RETRIEVED = ApiInfoItem(
+        CODE="ME_EVENT_RETRIEVED",
+        MESSAGE="Own event retrieved successfully.",
+    )
+
     EVENT_PUBLISHED = ApiInfoItem(
         CODE="EVENT_PUBLISHED",
         MESSAGE="Event published successfully.",
@@ -261,4 +266,9 @@ class ApiInfo:
     EVENT_NOT_DELETABLE = ApiInfoItem(
         CODE="EVENT_NOT_DELETABLE",
         MESSAGE="Only a draft can be deleted.",
+    )
+
+    USERS_RETRIEVED = ApiInfoItem(
+        CODE="USERS_RETRIEVED",
+        MESSAGE="Accounts retrieved successfully.",
     )

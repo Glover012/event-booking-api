@@ -6,12 +6,13 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD_FILE: ${SECRET_DIR}/postgres_password
       TZ: UTC
     ports:
       - "5432:5432"
     volumes:
       - event-booking-db:/var/lib/postgresql
+      - ${SECRET_DIR}:${SECRET_DIR}:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s

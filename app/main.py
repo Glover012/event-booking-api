@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 
 from .core.config import settings
@@ -12,6 +14,9 @@ from .routers import (
 from .core.exception_handlers import register_custom_exception_handlers
 from .core.logging import Logger
 
+### Logger ###
+logger = logging.getLogger(__name__)
+
 
 ### Factory mode ###
 def create_app(enable_file_logging: bool = True) -> FastAPI:
@@ -20,6 +25,14 @@ def create_app(enable_file_logging: bool = True) -> FastAPI:
         Logger("app")
         Logger("access", logger_name="uvicorn.access")
         Logger("server", logger_name="uvicorn.error")
+
+        # Marks the start of a session in a log file
+        logger.info(
+            "Starting %s %s in %s environment.",
+            settings.APP_NAME,
+            settings.APP_VERSION,
+            settings.ENVIRONMENT,
+        )
 
     ### App ###
     app = FastAPI(

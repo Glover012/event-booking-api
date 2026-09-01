@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     ### App details ###
     APP_NAME: str = "event-booking-api"
     APP_VERSION: str = "0.1.0"
-    ENVIRONMENT: str = "local"
+    ENVIRONMENT: str
 
 
     ### Database credentials ###

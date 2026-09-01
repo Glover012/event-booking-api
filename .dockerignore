@@ -3,8 +3,8 @@
 !app
 !alembic
 !alembic.ini
-!docker-entrypoint.sh
-!requirements.lock
+!docker/docker-entrypoint.sh
+!requirements/requirements.lock
 
 **/__pycache__
 **/*.pyc

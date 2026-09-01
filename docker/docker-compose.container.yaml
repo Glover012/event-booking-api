@@ -9,11 +9,11 @@ services:
     image: postgres:18-alpine
     environment:
       <<: *db-env
-      POSTGRES_PASSWORD_FILE: /var/lib/event-booking/secrets/postgres_password
+      POSTGRES_PASSWORD_FILE: ${SECRET_DIR}/postgres_password
       TZ: UTC
     volumes:
       - event-booking-db:/var/lib/postgresql
-      - /var/lib/event-booking/secrets:/var/lib/event-booking/secrets:ro
+      - ${SECRET_DIR}:${SECRET_DIR}:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
@@ -22,17 +22,20 @@ services:
 
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     environment:
       <<: *db-env
+      ENVIRONMENT: ${ENVIRONMENT}
       POSTGRES_HOST: ${POSTGRES_HOST}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
+      SECRET_DIR: ${SECRET_DIR}
+      LOG_DIR: ${LOG_DIR}
       TZ: UTC
     volumes:
-      - /var/lib/event-booking/secrets:/var/lib/event-booking/secrets:ro
-      - /var/log/event-booking:/var/log/event-booking
+      - ${SECRET_DIR}:${SECRET_DIR}:ro
+      - ${LOG_DIR}:${LOG_DIR}
     ports:
       - "8000:8000"
     depends_on:

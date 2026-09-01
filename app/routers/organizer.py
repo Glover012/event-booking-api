@@ -58,7 +58,7 @@ def list_me_events(
 
 
 @organizer_router.post(
-        '/events/create',
+        '/events',
         status_code=status.HTTP_201_CREATED,
         response_model=ApiResponse[EventResponseOwner],
         )
@@ -140,7 +140,7 @@ def publish_event(
 
 
 @organizer_router.put(
-        '/events/{event_id}/update',
+        '/events/{event_id}',
         status_code=status.HTTP_200_OK,
         response_model=ApiResponse[EventResponseOwner],
         )
@@ -180,7 +180,7 @@ def cancel_event(
 
 
 @organizer_router.delete(
-        '/events/{event_id}/delete',
+        '/events/{event_id}',
         status_code=status.HTTP_200_OK,
         response_model=ApiResponse[None],
         )

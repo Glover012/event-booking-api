@@ -2,9 +2,9 @@ FROM python:3.14-slim
 
 WORKDIR /event-booking-api
 
-COPY requirements/requirements.lock .
+COPY requirements/requirements.lock requirements/
 
-RUN pip install --no-cache-dir -r requirements.lock
+RUN pip install --no-cache-dir -r requirements/requirements.lock
 
 COPY . .
 

@@ -3,9 +3,10 @@ import os
 from pathlib import Path
 
 from . import env_file, secrets
+from .output import bold, cyan, green, red, yellow
 from .shell import run, run_root
-from .docker import compose, running_environments
-from .environment import CONTAINER, ENV_FILE, Environment, ENVIRONMENTS
+from .docker import compose, running_environments, volumes
+from .environment import CONTAINER, Environment, ENVIRONMENTS, LOCAL
 
 
 def up(args: argparse.Namespace) -> None:
@@ -21,12 +22,14 @@ def up(args: argparse.Namespace) -> None:
 
     if active_environments:
         for running, services in active_environments.items():
-            print(f"{running.NAME} environment is up: {', '.join(services)}")
+            print(f"{cyan((running.NAME).upper())} environment is up: {', '.join(services)}")
 
-        print("Run builder down first.")
+        print(bold("Run builder down first."))
         return
 
-    env_file.write(environment)
+    if environment is LOCAL:
+        env_file.write(environment)
+
     secrets.create(environment)
 
     compose(environment, "up", "-d", "--build", "--wait")
@@ -35,7 +38,7 @@ def up(args: argparse.Namespace) -> None:
         _print_bootstrap_password(environment)
         return
 
-    _start_api(environment)
+    _start_local_api(environment)
 
 
 def down(args: argparse.Namespace) -> None:
@@ -48,7 +51,7 @@ def down(args: argparse.Namespace) -> None:
 
     .env isn't removed.
     """
-    environment = args.environment
+    environment: Environment = args.environment
     remove_logs = args.logs or args.all
     remove_data = args.data or args.all
 
@@ -67,25 +70,25 @@ def down(args: argparse.Namespace) -> None:
 
 def status(args: argparse.Namespace) -> None:
     """
-    Returns status info about every enviornment. Cover info about log and secret
+    Print status info about every enviornment. Cover info about log and secret
     files presence, since each enviornment has them in different location.
 
     Directories answer without any privilege, so status never needs sudo.
     """
     active_enviornmnets = running_environments()
 
-    print(f"{'NAME':<12}{'LOGS':<12}{'SECRETS':<12}SERVICES")
+    print(bold(f"{'NAME':<12}{'LOGS':<12}{'SECRETS':<12}{'VOLUMES':<12}SERVICES"))
 
     for environment in ENVIRONMENTS:
         services = active_enviornmnets.get(environment)
 
         print(
-            f"{environment.NAME:<12}"
-            f"{_state(environment.LOG_DIR):<12}"
-            f"{_state(environment.SECRET_DIR):<12}"
+            f"{cyan(f'{environment.NAME:<12}')}"
+            f"{_state(environment.LOG_DIR.is_dir())}"
+            f"{_state(environment.SECRET_DIR.is_dir())}"
+            f"{_state(bool(volumes(environment)))}"
             f"{', '.join(services) if services else 'None'}"
         )
-
 
 ### Helpers ###
 def _print_bootstrap_password(environment: Environment) -> None:
@@ -101,16 +104,19 @@ def _print_bootstrap_password(environment: Environment) -> None:
 
     password = secrets.read(environment, secrets.BOOTSTRAP_PASSWORD)
 
-    print(f"\nBootstrap admin password: {password}")
-    print("Copy and change it after the first login.")
+    print(f"\nBootstrap admin password: {bold(yellow(password))}")
+    print(bold("Copy and change it after the first login."))
 
     if input("Remove the password? [y/N] ").strip().lower() == "y":
         secrets.remove(environment, secrets.BOOTSTRAP_PASSWORD)
-        print("bootstrap_admin_password removed.")
+        print(red("bootstrap_admin_password removed."))
 
 
-def _start_api(environment: Environment) -> None:
+def _start_local_api(environment: Environment) -> None:
     """
+    Local only, in the container environment uvicorn is started by the
+    image CMD instead, without --reload.
+
     Run migration, creates bootstrap admin account. Execute and replace
     current terminal process with uvicorn.
 
@@ -132,26 +138,32 @@ def _confirmed(environment: Environment) -> bool:
     """
     Confirmation popup with info regarding deletion.
     """
-    print("This removes, permanently:")
+    print(red("This removes, permanently:"))
     print("  - the database volume, with all the data")
     print(f"  - including the secrets in {environment.SECRET_DIR}")
 
     return input("Continue? [y/N] ").strip().lower() == "y"
 
 
-def _remove_directory(environment: Environment, path) -> None:
-    # -f is requried to avoid errors when dir doesn't exists
+def _remove_directory(environment: Environment, path: Path) -> None:
     if not path.is_dir():
+        print(f"Already removed: {path}.")
         return
 
+    # -f is requried to avoid errors when dir doesn't exists
     if environment.NEEDS_ROOT:
         run_root(["rm", "-rf", str(path)])
     else:
         run(["rm", "-rf", str(path)])
 
-    print(f"Removed {path}.")
+    print(red(f"Removed: {path}."))
 
 
-def _state(path: Path) -> str:
-    """Simple check whether dir exists."""
-    return "present" if path.is_dir() else "None"
+def _state(present: bool) -> str:
+    """
+    Returns info based on dir/volume presence. If true color it green.
+    """
+    # Add padding before colouring, since ANSI codes are invisible but
+    # still counted, therefroe padding a coloured string would misalign
+    # every row below the header.
+    return green(f"{'True':<12}") if present else f"{'None':<12}"

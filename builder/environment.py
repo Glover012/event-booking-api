@@ -12,6 +12,7 @@ class Environment:
     """
 
     NAME: str
+    PROJECT: str
     COMPOSE_FILE: Path
     LOG_DIR: Path
     SECRET_DIR: Path
@@ -23,6 +24,7 @@ class Environment:
 # under /var, therefore it requires additional root permissions for those paths
 CONTAINER = Environment(
     NAME="container",
+    PROJECT="event-booking", # It must correspond to a docker-compose.container.yaml `name:`
     COMPOSE_FILE=REPOSITORY / "docker" / "docker-compose.container.yaml",
     LOG_DIR=Path("/var/log/event-booking"),
     SECRET_DIR=Path("/var/lib/event-booking/secrets"),
@@ -40,6 +42,7 @@ CONTAINER = Environment(
 # repository, so it needs no root access at all
 LOCAL = Environment(
     NAME="local",
+    PROJECT="event-booking-local", # It must correspond to a docker-compose.local.yaml `name:`
     COMPOSE_FILE=REPOSITORY / "docker" / "docker-compose.local.yaml",
     LOG_DIR=REPOSITORY / "logs",
     SECRET_DIR=REPOSITORY / "secrets",
@@ -54,3 +57,27 @@ LOCAL = Environment(
 )
 
 ENVIRONMENTS = (CONTAINER, LOCAL)
+
+
+def variables(environment: Environment) -> dict[str, str]:
+    """
+    Returns every enviornmental variable that is used by docker compose 
+    and the API.
+
+    These variables are loaded into created .env file and are attached
+    to a compose subprocess, therefore compose don't rely on .env
+    availability. 
+
+    The API loads variables from .env file, while docker compose have them 
+    provided by env in run command.
+
+    For more details, look into:
+        - shell.py/run function
+        - docker.py/compose function
+    """
+    return {
+        "ENVIRONMENT": environment.NAME,
+        "SECRET_DIR": str(environment.SECRET_DIR),
+        "LOG_DIR": str(environment.LOG_DIR),
+        **dict(environment.VARIABLES),
+    }

@@ -3,6 +3,7 @@ import secrets
 import tempfile
 from pathlib import Path
 
+from .output import green
 from .environment import Environment
 from .shell import CommandFailed, run_root
 
@@ -22,7 +23,7 @@ def create(environment: Environment) -> None:
 
     for name in SECRET_NAMES:
         if exists(environment, name):
-            print(f"{name} already exists and will be used.")
+            print(f"{green(name)} already exists and will be used.")
             continue
 
         _write(environment, name, secrets.token_hex(32))

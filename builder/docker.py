@@ -1,8 +1,8 @@
-import json
+import os
 import shutil
 from functools import cache
 
-from .environment import ENV_FILE, Environment, ENVIRONMENTS
+from .environment import Environment, ENVIRONMENTS, variables
 from .shell import run, CommandFailed
 
 
@@ -35,19 +35,26 @@ def compose(
     
     Additional docker compose arguments are simply passed.
 
-    --env-file absolute path is additionally provied, because compose looks for .env 
-    in the directory of the compose file and all is located in docker/ dir.
+    All required enviornment variables that docker compose needs
+    are provided in run function enviornment. Therefore
+    docker compose commands don't rely on .env file availability, 
+    at all.
     """
-    env_file = ["--env-file", str(ENV_FILE)] if ENV_FILE.is_file() else []
-
     return run(
         [
             *compose_command(),
-            *env_file,
             "-f", str(environment.COMPOSE_FILE),
             *arguments,
         ],
         capture=capture,
+
+        # os.environ returns enviornmental variables inherited by this process 
+        # env= replaces the environment instead of adding to it, so
+        # passing variables(environment) alone would leave the command
+        # without PATH and 'docker' may not be found. Therefore contents of both 
+        # have to be merged. Both objects(os._Environ and dict) are mappings, 
+        # so ** can be used to unpack keys and values from them
+        env={**os.environ, **variables(environment)},
     )
 
 
@@ -58,9 +65,12 @@ def running_services(environment: Environment) -> list[str]:
     Result is scoped by the compose file, so any unrelated contrainer on the same 
     machine aren't taken into account.
     """
-    output = compose(
-        environment,
-        "ps", "--services", "--status", "running",
+    output = run(
+        [
+            "docker", "ps",
+            "--filter", f"label=com.docker.compose.project={environment.PROJECT}",
+            "--format", '{{.Label "com.docker.compose.service"}}',
+        ],
         capture=True,
     )
 
@@ -80,3 +90,22 @@ def running_environments() -> dict[Environment, list[str]]:
         for environment in ENVIRONMENTS
         if (services := running_services(environment))
     }
+
+def volumes(environment: Environment) -> list[str]:
+    """
+    Returns the names of the volumes, or [] when none exists. Filtered by docker compose 
+    project `name:`.
+
+    Volumes survives down without `--all` or `--data` argument, so a stopped environment
+    can still hold a database volume.
+    """
+    output = run(
+        [
+            "docker", "volume", "ls",
+            "--filter", f"label=com.docker.compose.project={environment.PROJECT}",
+            "--format", "{{.Name}}",
+        ],
+        capture=True,
+    )
+
+    return output.splitlines()

@@ -11,13 +11,22 @@ class CommandFailed(RuntimeError):
     pass
 
 
-def run(command: list[str], capture: bool = False) -> str:
+def run(
+        command: list[str], 
+        capture: bool = False,
+        env: dict[str, str] | None = None,
+        ) -> str:
     """
     Runs a command as the current user.
 
     Output is streaming to the terminal, unless capture is True.
+
+    env replaces the process environment for the child, which is how compose
+    receives its values without depending on a .env file availability.
     """
-    result = subprocess.run(command, text=True, capture_output=capture)
+    result = subprocess.run(
+        command, text=True, capture_output=capture, env=env
+        )
 
     if result.returncode != 0:
         raise CommandFailed(

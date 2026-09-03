@@ -1,19 +1,18 @@
-"""add updated_at triggers
+"""Add updated_at triggers
 
-Revision ID: triggers
-Revises: 749b5a1fb63f
-Create Date: 2026-08-27 15:53:55.910703
+Revision ID: add_updated_at_triggers
+Revises: __PREVIOUS__
 
 """
 from typing import Sequence, Union
 
 from alembic import op
-import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
-revision: str = 'triggers'
-down_revision: Union[str, Sequence[str], None] = '749b5a1fb63f'
+# down_revision is filled in by builder/schema.py when this file is copied
+# into alembic/versions, since the revision it follows is generated.
+revision: str = "add_updated_at_triggers"
+down_revision: Union[str, Sequence[str], None] = "__PREVIOUS__"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

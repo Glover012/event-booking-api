@@ -3,6 +3,7 @@ import argparse
 from .commands import down, status, up
 from .environment import ENVIRONMENTS, Environment
 from .shell import CommandFailed
+from .schema import rebuild_schema
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -25,6 +26,18 @@ def build_parser() -> argparse.ArgumentParser:
             )
         )
     status_parser.set_defaults(handler=status)
+
+    schema_parser = subparsers.add_parser(
+        "rebuild-schema",
+        help=(
+            "Regenerate the initial Alembic revision from the database models and re-apply the "
+            "static revisions from builder/revisions. Furthermore it test generated and applied static "
+            "revisions by applying 'alembic upgrade head' and 'alembic down base', on empty postgres "
+            "container. It uses the local environment, therefore any remaining elements of previous local "
+            "instance will be purged."
+        ),
+    )
+    schema_parser.set_defaults(handler=rebuild_schema)
 
     return parser
 

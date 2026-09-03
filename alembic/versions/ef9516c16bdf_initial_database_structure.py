@@ -1,20 +1,19 @@
 """Initial database structure
 
-Revision ID: 749b5a1fb63f
+Revision ID: ef9516c16bdf
 Revises: 
-Create Date: 2026-08-27 15:31:01.489254
+Create Date: 2026-09-03 22:00:16.095545
 
 """
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+import app.db.types
 from sqlalchemy.dialects import postgresql
 
-import app.db.types
-
 # revision identifiers, used by Alembic.
-revision: str = '749b5a1fb63f'
+revision: str = 'ef9516c16bdf'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

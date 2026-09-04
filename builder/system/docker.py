@@ -2,8 +2,8 @@ import os
 import shutil
 from functools import cache
 
-from .environment import Environment, ENVIRONMENTS, variables
-from .shell import run, CommandFailed
+from ..config import ENVIRONMENTS, Environment, variables
+from .shell import CommandFailed, run
 
 
 @cache

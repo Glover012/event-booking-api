@@ -1,9 +1,9 @@
-from .environment import ENV_FILE, Environment, variables
+from ..config import ENV_FILE, Environment, variables
 
 HEADER = (
-    "# Written by python -m builder up.",
+    "# Written by python -m builder up/rebuild-schema.",
     "# Manual edits will be overwritten on the next run ",
-    "# - variable values are located in: builder/environment.py.",
+    "# - variable values are located in: builder/config/environments.py.",
 )
 
 

@@ -1,6 +1,7 @@
+from collections.abc import Iterable
 import sys
 
-### Output ###
+
 # ANSI escape codes, disabled when the output is not a terminal
 _COLOR = sys.stdout.isatty()
 
@@ -46,3 +47,33 @@ def yellow(text: str) -> str:
     Shown only once.
     """
     return f"{_YELLOW}{text}{_RESET}"
+
+
+def confirm(question: str, items: Iterable[str] = ()) -> bool:
+    """
+    Confirmation popup with info regarding deletion.
+
+    The caller passes info about what will be destroyed.
+
+    Anything other than an explicit y aborts, so an accidental enter simply
+    returns.
+    """
+    print(red(question))
+
+    for item in items:
+        print(f"  - {item}")
+
+    try:
+        return input("Continue? [y/N] ").strip().lower() == "y"
+    except EOFError: # No action is performed - in case Ctrl+D or GitHub Actions < /dev/null
+        return False
+
+
+def state(present: bool) -> str:
+    """
+    Returns info based on dir/volume presence. If true color it green.
+    """
+    # Add padding before colouring, since ANSI codes are invisible but
+    # still counted, therefroe padding a coloured string would misalign
+    # every row below the header.
+    return green(f"{'True':<12}") if present else f"{'None':<12}"

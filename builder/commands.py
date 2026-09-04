@@ -1,23 +1,36 @@
 import argparse
-import os
-from pathlib import Path
 
-from . import env_file, secrets
-from .output import bold, cyan, green, red, yellow
-from .shell import run, run_root
-from .docker import compose, running_environments, volumes
-from .environment import CONTAINER, Environment, ENVIRONMENTS, LOCAL
+from .config import (
+    ALEMBIC_VERSIONS_DIR,
+    CONTAINER,
+    ENVIRONMENTS,
+    LOCAL,
+    REPOSITORY_DIR,
+    Environment,
+)
+from .helpers import api, env_file, secrets
+from .helpers.console import bold, confirm, cyan, green, red, state
+from .helpers.filesystem import remove_directory
+from .helpers.revisions import copy_static
+from .system import (
+    compose,
+    run,
+    running_environments,
+    running_services,
+    volumes,
+)
 
+### Commands ###
+# Only body of the CLI commands and nothing else. Every helper is imported.
 
 def up(args: argparse.Namespace) -> None:
     """
     Brings enviornment up, refuses when any other event-booking
     enviornment is already running.
 
-    Writes .env before anything else, since compose and API read
-    from it.
+    Writes .env since API read from it.
     """
-    environment = args.environment
+    environment: Environment = args.environment
     active_environments = running_environments()
 
     if active_environments:
@@ -35,10 +48,10 @@ def up(args: argparse.Namespace) -> None:
     compose(environment, "up", "-d", "--build", "--wait")
 
     if environment is CONTAINER:
-        _print_bootstrap_password(environment)
+        secrets.print_bootstrap_password(environment)
         return
 
-    _start_local_api(environment)
+    api.start_local(environment)
 
 
 def down(args: argparse.Namespace) -> None:
@@ -55,17 +68,23 @@ def down(args: argparse.Namespace) -> None:
     remove_logs = args.logs or args.all
     remove_data = args.data or args.all
 
-    if remove_data and not _confirmed(environment):
+    if remove_data and not confirm(
+        "This removes, permanently:",
+        (
+            "the database volume, with all the data",
+            f"including the secrets in {environment.SECRET_DIR}",
+        ),
+    ):
         print("Operation aborted, nothing was removed.")
         return
 
     compose(environment, "down", *(["-v"] if remove_data else []))
 
     if remove_logs:
-        _remove_directory(environment, environment.LOG_DIR)
+        remove_directory(environment, environment.LOG_DIR)
 
     if remove_data:
-        _remove_directory(environment, environment.SECRET_DIR)
+        remove_directory(environment, environment.SECRET_DIR)
 
 
 def status(args: argparse.Namespace) -> None:
@@ -84,86 +103,80 @@ def status(args: argparse.Namespace) -> None:
 
         print(
             f"{cyan(f'{environment.NAME:<12}')}"
-            f"{_state(environment.LOG_DIR.is_dir())}"
-            f"{_state(environment.SECRET_DIR.is_dir())}"
-            f"{_state(bool(volumes(environment)))}"
+            f"{state(environment.LOG_DIR.is_dir())}"
+            f"{state(environment.SECRET_DIR.is_dir())}"
+            f"{state(bool(volumes(environment)))}"
             f"{', '.join(services) if services else 'None'}"
         )
 
-### Helpers ###
-def _print_bootstrap_password(environment: Environment) -> None:
-    """
-    Print the bootstrap admin password once and offers to delete the file.
 
-    Only bootstrap admin password is disposable. Other secrets are required
-    for the next runs with the same db volume.
+def rebuild_schema(args: argparse.Namespace) -> None:
     """
-    if not secrets.exists(environment, secrets.BOOTSTRAP_PASSWORD):
-        print("Bootstrap admin password already removed.")
+    Regenerates the Alembic initial revision from the database models, 
+    then re-applies the static revisions from builder/revisions.
+
+    Runs using the local enviornment, because new revisions must be
+    included in repository.
+
+    The database must be empty, since Alembic autogenerate compares the 
+    models with current db content, so a remaining volume from previous runs 
+    would produce an empty migration instead of the whole inital schema.
+
+    Nothing is left behind after a succesfull run. The result is only a set of new 
+    revisions, that are verified by applying 'alembic upgrade head' and 
+    'alembic down base'.
+    """
+    revisions = sorted(ALEMBIC_VERSIONS_DIR.glob("*.py"))
+    existing = [] # Elements that will be removed/disabled
+
+    if running_services(LOCAL):
+        existing.append("the running local containers")
+
+    if volumes(LOCAL):
+        existing.append("the local database volume, with all its data")
+
+    for directory in (LOCAL.SECRET_DIR, LOCAL.LOG_DIR):
+        if directory.is_dir():
+            existing.append(str(directory))
+
+    if revisions:
+        existing.append(f"{len(revisions)} revision file(s) in alembic/versions")
+
+    if existing and not confirm("This removes, permanently:", existing):
+        print("Operation aborted, nothing was removed.")
         return
 
-    password = secrets.read(environment, secrets.BOOTSTRAP_PASSWORD)
+    compose(LOCAL, "down", "-v")
+    remove_directory(LOCAL, LOCAL.SECRET_DIR)
+    remove_directory(LOCAL, LOCAL.LOG_DIR)
 
-    print(f"\nBootstrap admin password: {bold(yellow(password))}")
-    print(bold("Copy and change it after the first login."))
+    for revision in revisions:
+        revision.unlink()
+        print(red(f"Removed {revision.relative_to(REPOSITORY_DIR)}."))
 
-    if input("Remove the password? [y/N] ").strip().lower() == "y":
-        secrets.remove(environment, secrets.BOOTSTRAP_PASSWORD)
-        print(red("bootstrap_admin_password removed."))
+    env_file.write(LOCAL)
+    secrets.create(LOCAL)
 
+    try:
+        compose(LOCAL, "up", "-d", "--wait")
 
-def _start_local_api(environment: Environment) -> None:
-    """
-    Local only, in the container environment uvicorn is started by the
-    image CMD instead, without --reload.
+        run([
+            "alembic", "revision", "--autogenerate",
+            "-m", "Initial database structure",
+        ])
 
-    Run migration, creates bootstrap admin account. Execute and replace
-    current terminal process with uvicorn.
+        copy_static()
 
-    The password is shown before the uvicorn execution.
-    """
-    run(["alembic", "upgrade", "head"])
-    run(["python", "-m", "app.cli", "create-bootstrap-admin"])
+        # Test both directions, upgrade and downgrade
+        run(["alembic", "upgrade", "head"])
+        run(["alembic", "downgrade", "base"])
 
-    _print_bootstrap_password(environment)
+    finally:
+        # Removes all elements this command created, no matter the result.
+        compose(LOCAL, "down", "-v")
+        remove_directory(LOCAL, LOCAL.SECRET_DIR)
+        remove_directory(LOCAL, LOCAL.LOG_DIR)
 
-    # Replaces currnet terminal process with uvicorn
-    os.execvp(
-        "uvicorn",
-        ["uvicorn", "app.main:create_app", "--factory", "--reload"],
-    )
-
-
-def _confirmed(environment: Environment) -> bool:
-    """
-    Confirmation popup with info regarding deletion.
-    """
-    print(red("This removes, permanently:"))
-    print("  - the database volume, with all the data")
-    print(f"  - including the secrets in {environment.SECRET_DIR}")
-
-    return input("Continue? [y/N] ").strip().lower() == "y"
-
-
-def _remove_directory(environment: Environment, path: Path) -> None:
-    if not path.is_dir():
-        print(f"Already removed: {path}.")
-        return
-
-    # -f is requried to avoid errors when dir doesn't exists
-    if environment.NEEDS_ROOT:
-        run_root(["rm", "-rf", str(path)])
-    else:
-        run(["rm", "-rf", str(path)])
-
-    print(red(f"Removed: {path}."))
-
-
-def _state(present: bool) -> str:
-    """
-    Returns info based on dir/volume presence. If true color it green.
-    """
-    # Add padding before colouring, since ANSI codes are invisible but
-    # still counted, therefroe padding a coloured string would misalign
-    # every row below the header.
-    return green(f"{'True':<12}") if present else f"{'None':<12}"
+    print()
+    for revision in sorted(ALEMBIC_VERSIONS_DIR.glob("*.py")):
+        print(green(f"Created {revision.relative_to(REPOSITORY_DIR)}"))

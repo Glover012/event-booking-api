@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-REPOSITORY = Path(__file__).resolve().parent.parent
-ENV_FILE = REPOSITORY / ".env"
+from .paths import DOCKER_DIR, REPOSITORY_DIR
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,7 +24,7 @@ class Environment:
 CONTAINER = Environment(
     NAME="container",
     PROJECT="event-booking", # It must correspond to a docker-compose.container.yaml `name:`
-    COMPOSE_FILE=REPOSITORY / "docker" / "docker-compose.container.yaml",
+    COMPOSE_FILE=DOCKER_DIR / "docker-compose.container.yaml",
     LOG_DIR=Path("/var/log/event-booking"),
     SECRET_DIR=Path("/var/lib/event-booking/secrets"),
     NEEDS_ROOT=True,
@@ -43,9 +42,9 @@ CONTAINER = Environment(
 LOCAL = Environment(
     NAME="local",
     PROJECT="event-booking-local", # It must correspond to a docker-compose.local.yaml `name:`
-    COMPOSE_FILE=REPOSITORY / "docker" / "docker-compose.local.yaml",
-    LOG_DIR=REPOSITORY / "logs",
-    SECRET_DIR=REPOSITORY / "secrets",
+    COMPOSE_FILE=DOCKER_DIR / "docker-compose.local.yaml",
+    LOG_DIR=REPOSITORY_DIR / "logs",
+    SECRET_DIR=REPOSITORY_DIR / "secrets",
     NEEDS_ROOT=False,
     VARIABLES=(
         ("POSTGRES_USER", "event-booking"),
@@ -72,8 +71,8 @@ def variables(environment: Environment) -> dict[str, str]:
     provided by env in run command.
 
     For more details, look into:
-        - shell.py/run function
-        - docker.py/compose function
+        - system/shell.py/run function
+        - system/docker.py/compose function
     """
     return {
         "ENVIRONMENT": environment.NAME,

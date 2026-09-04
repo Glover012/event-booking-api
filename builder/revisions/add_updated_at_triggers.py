@@ -9,8 +9,8 @@ from typing import Sequence, Union
 from alembic import op
 
 # revision identifiers, used by Alembic.
-# down_revision is filled in by builder/schema.py when this file is copied
-# into alembic/versions, since the revision it follows is generated.
+# down_revision is filled in by builder rebuild-schema when this file is copied
+# into alembic/versions, since the revision it follows is auto-generated
 revision: str = "add_updated_at_triggers"
 down_revision: Union[str, Sequence[str], None] = "__PREVIOUS__"
 branch_labels: Union[str, Sequence[str], None] = None

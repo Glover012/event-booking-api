@@ -1,9 +1,8 @@
 import argparse
 
-from .commands import down, status, up
-from .environment import ENVIRONMENTS, Environment
-from .shell import CommandFailed
-from .schema import rebuild_schema
+from .commands import down, rebuild_schema, status, up
+from .config import ENVIRONMENTS, Environment
+from .system import CommandFailed
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -84,9 +83,13 @@ def main() -> None:
 
     try:
         args.handler(args)
+
+    # CommandFailed carries the whole command error info
     except CommandFailed as error:
         raise SystemExit(str(error))
 
+    except KeyboardInterrupt:
+        raise SystemExit("Aborted.")
 
 if __name__ == "__main__":
     main()

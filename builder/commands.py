@@ -29,6 +29,8 @@ def up(args: argparse.Namespace) -> None:
     enviornment is already running.
 
     Writes .env since API read from it.
+
+    With --no-api uvicorn isn't started and admin password isn't printed.
     """
     environment: Environment = args.environment
     active_environments = running_environments()
@@ -51,7 +53,16 @@ def up(args: argparse.Namespace) -> None:
         secrets.print_bootstrap_password(environment)
         return
 
-    api.start_local(environment)
+    # Local run only. The container environment runs both cmds in its entrypoint
+    run(["alembic", "upgrade", "head"])
+    run(["python", "-m", "app.cli", "create-bootstrap-admin"])
+
+    # Returns before the password print, so CI don't need to react on input()
+    if environment is LOCAL and args.no_api:
+        return
+
+    secrets.print_bootstrap_password(environment)
+    api.start_api()
 
 
 def down(args: argparse.Namespace) -> None:

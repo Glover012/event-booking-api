@@ -1,7 +1,7 @@
 import argparse
 
 from .commands import down, rebuild_schema, status, up
-from .config import ENVIRONMENTS, Environment
+from .config import ENVIRONMENTS, Environment, LOCAL
 from .system import CommandFailed
 
 
@@ -58,6 +58,16 @@ def _add_environment(subparsers, environment: Environment) -> None:
             "If secrets or volumes already exists, reuse them."
         )
     )
+
+    if environment is LOCAL:
+        up_parser.add_argument(
+            "--no-api",
+            action="store_true",
+            help=(
+                "Do not start uvicorn server. Used mainly in CI."
+            ),
+        )
+    
     up_parser.set_defaults(handler=up, environment=environment)
 
     down_parser = commands.add_parser(
@@ -75,6 +85,7 @@ def _add_environment(subparsers, environment: Environment) -> None:
     down_parser.add_argument(
         "--all", action="store_true", help="Remove both --logs and --data."
     )
+
     down_parser.set_defaults(handler=down, environment=environment)
 
 

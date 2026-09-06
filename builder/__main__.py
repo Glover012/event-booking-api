@@ -1,6 +1,6 @@
 import argparse
 
-from .commands import down, rebuild_schema, status, up
+from .commands import down, rebuild_schema, status, up, files
 from .config import ENVIRONMENTS, Environment, LOCAL
 from .system import CommandFailed
 
@@ -59,6 +59,7 @@ def _add_environment(subparsers, environment: Environment) -> None:
         )
     )
 
+    # Stuff dedicated for local enviornment only
     if environment is LOCAL:
         up_parser.add_argument(
             "--no-api",
@@ -67,9 +68,9 @@ def _add_environment(subparsers, environment: Environment) -> None:
                 "Do not start uvicorn server. Used mainly in CI."
             ),
         )
-    
-    up_parser.set_defaults(handler=up, environment=environment)
 
+    up_parser.set_defaults(handler=up, environment=environment)
+    
     down_parser = commands.add_parser(
         "down",
         help="Stop the environment. Nothing is removed, unless arguments provided.",
@@ -87,6 +88,15 @@ def _add_environment(subparsers, environment: Environment) -> None:
     )
 
     down_parser.set_defaults(handler=down, environment=environment)
+
+    files_parser = commands.add_parser(
+    "files",
+        help=(
+            "Create .env(only LOCAL) and any missing secret file without starting "
+            "anything. Used mainly to run tests that need no database."
+        ),
+    )
+    files_parser.set_defaults(handler=files, environment=environment)
 
 
 def main() -> None:

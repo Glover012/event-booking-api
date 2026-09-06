@@ -191,3 +191,22 @@ def rebuild_schema(args: argparse.Namespace) -> None:
     print()
     for revision in sorted(ALEMBIC_VERSIONS_DIR.glob("*.py")):
         print(green(f"Created {revision.relative_to(REPOSITORY_DIR)}"))
+
+
+def files(args: argparse.Namespace) -> None:
+    """
+    Only creates .env(only LOCAL) and missing secret files, that are required to 
+    start LOCAL enviornment.
+
+    API settings, like DATABASE_URL, are resolved, during import, so
+    lack of .env or secrets result in error. Therefore before running
+    the tests it is necesarry to create the files first.
+
+    Generated secrets and .env can be later reused on `builder local up`.
+    """
+    environment: Environment = args.environment
+
+    if environment is LOCAL:
+        env_file.write(environment)
+
+    secrets.create(environment)

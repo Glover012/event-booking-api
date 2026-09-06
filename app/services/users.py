@@ -17,13 +17,13 @@ class UsersService:
         self.db = db
 
     def find_by_identity(
-            self,
-            id: int | None = None,
-            username: str | None = None,
-            email: str | None = None,
-            ) -> Users | None:
+        self,
+        id: int | None = None,
+        username: str | None = None,
+        email: str | None = None,
+    ) -> Users | None:
         """
-        Returns the account model that matches all provided credentials, 
+        Returns the account model that matches all provided credentials,
         or None.
 
         Does not raise the error. The decision is left for the assistant.
@@ -41,10 +41,10 @@ class UsersService:
         return self.db.query(Users).filter(and_(*filters)).first()
 
     def credentials_taken(
-            self,
-            username: str | None = None,
-            email: str | None = None,
-            ) -> bool:
+        self,
+        username: str | None = None,
+        email: str | None = None,
+    ) -> bool:
         """
         Checks whether any account already uses the username or the email.
         """
@@ -59,16 +59,16 @@ class UsersService:
         return self.db.query(Users).filter(or_(*filters)).first() is not None
 
     def create(
-            self,
-            username: str,
-            email: str,
-            first_name: str,
-            last_name: str,
-            hashed_password: HashedPassword,
-            role: str,
-            ) -> Users:
+        self,
+        username: str,
+        email: str,
+        first_name: str,
+        last_name: str,
+        hashed_password: HashedPassword,
+        role: str,
+    ) -> Users:
         """
-        Creates a new User account. The provided password has to be already 
+        Creates a new User account. The provided password has to be already
         hashed, therefore the plaintext never reaches this layer.
 
         The unique constraints on email and username are what finally
@@ -82,7 +82,7 @@ class UsersService:
                 first_name=first_name,
                 last_name=last_name,
                 hashed_password=hashed_password,
-                role=role
+                role=role,
             )
             self.db.add(new_user)
             self.db.commit()
@@ -95,10 +95,10 @@ class UsersService:
             raise HTTPError.USER_ALREADY_EXISTS() from e
 
     def update_password(
-            self,
-            user_model: Users,
-            hashed_password: HashedPassword,
-            ) -> None:
+        self,
+        user_model: Users,
+        hashed_password: HashedPassword,
+    ) -> None:
         """
         Updates the password on an existing account
         """
@@ -112,10 +112,10 @@ class UsersService:
             raise HTTPError.TRANSACTION_REFUSED() from e
 
     def update_role(
-            self,
-            user_model: Users,
-            role: UserRole,
-            ) -> Users:
+        self,
+        user_model: Users,
+        role: UserRole,
+    ) -> Users:
         """
         Sets a new role on an existing account.
         """
@@ -132,11 +132,11 @@ class UsersService:
             raise HTTPError.TRANSACTION_REFUSED() from e
 
     def update_profile(
-            self,
-            user_model: Users,
-            first_name: str,
-            last_name: str,
-            ) -> Users:
+        self,
+        user_model: Users,
+        first_name: str,
+        last_name: str,
+    ) -> Users:
         """
         Updates the editable profile fields on an existing account.
 
@@ -156,10 +156,10 @@ class UsersService:
             raise HTTPError.TRANSACTION_REFUSED() from e
 
     def list_models(
-            self,
-            limit: int,
-            offset: int,
-            ) -> tuple[list[Users], int]:
+        self,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Users], int]:
         """
         Returns one page of accounts with the total row count required by
         the Page model and the API client.

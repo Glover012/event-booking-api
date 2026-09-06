@@ -11,11 +11,12 @@ from .console import red
 # root, while the local one keeps them inside the repository, owned by the
 # current user. Therefore _run acts based on envriornment config.
 
+
 def _run(
-        environment: Environment,
-        command: list[str],
-        capture: bool = False,
-        ) -> str:
+    environment: Environment,
+    command: list[str],
+    capture: bool = False,
+) -> str:
     """
     Runs one command that touch a path, as whoever owns paths based on
     enviornment configuration.
@@ -27,10 +28,10 @@ def _run(
 
 
 def create_directory(
-        environment: Environment,
-        path: Path,
-        mode: str = "700",
-        ) -> None:
+    environment: Environment,
+    path: Path,
+    mode: str = "700",
+) -> None:
     """
     Creates the directory with its parents and sets its permissions.
 
@@ -61,18 +62,18 @@ def remove_directory(environment: Environment, path: Path) -> None:
 
 
 def write_secret_file(
-        environment: Environment,
-        path: Path,
-        content: str,
-        mode: str = "600",
-        ) -> None:
+    environment: Environment,
+    path: Path,
+    content: str,
+    mode: str = "600",
+) -> None:
     """
     Writes secret content into path and sets its permissions.
 
     The value never travels in the command line, because anyone on the
     machine can read `/proc/<pid>/cmdline`. Instead:
 
-        1. Creates a temporary file owned by current user with 0600 
+        1. Creates a temporary file owned by current user with 0600
         with a random name under /tmp
         2. Writes the content into it and closes the handle, so it reaches
         disk before install reads it

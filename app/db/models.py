@@ -86,7 +86,7 @@ class Events(Base):
     )
     owner_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"),
-        )
+    )
     starts_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
     ends_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
@@ -117,8 +117,8 @@ class Bookings(Base):
         # Besides its base Index functionality, it additionally protects the table
         # from multiple reservations of the same user, on the same event.
         # When a user cancels, the status changes to 'cancelled', the row stops
-        # matching the Index condition and are dropped out of the Index. 
-        # The pair is free again, so the user may re-book - only 'confirmed' 
+        # matching the Index condition and are dropped out of the Index.
+        # The pair is free again, so the user may re-book - only 'confirmed'
         # rows are indexed. A UNIQUE(user_id, event_id) would block re-booking completely.
         Index(
             "uq_bookings_active",
@@ -128,10 +128,10 @@ class Bookings(Base):
             postgresql_where=text("status = 'confirmed'"),
         ),
         Index(
-        "ix_bookings_event_confirmed",
-        "event_id",
-        "ticket_amount",
-        postgresql_where=text("status = 'confirmed'"),
+            "ix_bookings_event_confirmed",
+            "event_id",
+            "ticket_amount",
+            postgresql_where=text("status = 'confirmed'"),
         ),
         Index("ix_bookings_user_id", "user_id"),
         Index("ix_bookings_event_id", "event_id"),

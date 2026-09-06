@@ -23,22 +23,25 @@ class BookingsService:
         Has a corresponding Index ix_bookings_event_confirmed.
         """
         # coalesce if NULL return 0
-        # Changing filtering options to ex: != 'cancelled' will 
+        # Changing filtering options to ex: != 'cancelled' will
         # skip index, since filter must replicate index condition
-        return self.db.query(
-            func.coalesce(func.sum(Bookings.ticket_amount), 0)
-        ).filter(and_(
-            Bookings.event_id == event_id,
-            Bookings.status == BookingStatus.CONFIRMED.value
-            ),
-        ).scalar()
+        return (
+            self.db.query(func.coalesce(func.sum(Bookings.ticket_amount), 0))
+            .filter(
+                and_(
+                    Bookings.event_id == event_id,
+                    Bookings.status == BookingStatus.CONFIRMED.value,
+                ),
+            )
+            .scalar()
+        )
 
     def create(
-            self,
-            user_id: int,
-            event_id: int,
-            ticket_amount: int,
-            ) -> Bookings:
+        self,
+        user_id: int,
+        event_id: int,
+        ticket_amount: int,
+    ) -> Bookings:
         """
         Creates a confirmed booking.
         """
@@ -60,35 +63,36 @@ class BookingsService:
             raise HTTPError.BOOKING_ALREADY_EXISTS() from e
 
     def get_user_owned_model(
-            self,
-            user_id: int,
-            booking_id: int,
-            ) -> Bookings:
+        self,
+        user_id: int,
+        booking_id: int,
+    ) -> Bookings:
         """
-        Returns the booking model only that belongs to 
+        Returns the booking model only that belongs to
         User.
 
-        Raise the same error when booking doesn't exists and 
+        Raise the same error when booking doesn't exists and
         when it belongs to different User.
         """
 
-        booking_model = self.db.query(Bookings).filter(
-            and_(
-                Bookings.id == booking_id,
-                Bookings.user_id == user_id
-            ),
-        ).first()
+        booking_model = (
+            self.db.query(Bookings)
+            .filter(
+                and_(Bookings.id == booking_id, Bookings.user_id == user_id),
+            )
+            .first()
+        )
 
         if booking_model is None:
             raise HTTPError.BOOKING_DOES_NOT_EXIST()
         return booking_model
 
     def list_user_owned_models(
-            self,
-            user_id: int,
-            limit: int,
-            offset: int,
-            ) -> tuple[list[Bookings], int]:
+        self,
+        user_id: int,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Bookings], int]:
         """
         Returns one page of the User bookings with the total row count
         required by the Page model and the API client.
@@ -96,7 +100,7 @@ class BookingsService:
         Cancelled rows are kept in the history.
 
         Ordered deterministically: newest first, with id breaking ties.
-        Without a deterministic order OFFSET may return the same row on 
+        Without a deterministic order OFFSET may return the same row on
         two pages or skip one entirely.
         """
         query = self.db.query(Bookings).filter(Bookings.user_id == user_id)
@@ -136,19 +140,19 @@ class BookingsService:
             raise HTTPError.TRANSACTION_REFUSED() from e
 
     def list_event_bookings_detailed_models(
-            self,
-            event_id: int,
-            booking_status: BookingStatusFilter,
-            limit: int,
-            offset: int,
-            ) -> tuple[list[Row], int]:
+        self,
+        event_id: int,
+        booking_status: BookingStatusFilter,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Row], int]:
         """
         Returns one page of the event's bookings joined with the User account
         behind each of them, with the total row count required by the Page
         model and the API client.
 
         Result is row that ParticipantResponse reads through from_attributes.
-        Each column is specifically selected, therefore unused and critical 
+        Each column is specifically selected, therefore unused and critical
         data, like password, aren't taken from the database.
 
         Ordered deterministically: newest first, with id breaking ties.
@@ -162,7 +166,7 @@ class BookingsService:
             filters.append(Bookings.status == booking_status.value)
 
         # Count bookings based on filters, before join and
-        # before limit/offset, so it describes every 
+        # before limit/offset, so it describes every
         # matching row, not just the page
         total = self.db.query(Bookings).filter(and_(*filters)).count()
 

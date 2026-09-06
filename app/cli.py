@@ -3,6 +3,7 @@ import argparse
 from .bootstrap.admin import CreateBootstrapAdmin
 from .core.logging import Logger
 
+
 def create_bootstrap_admin(args: argparse.Namespace) -> None:
     CreateBootstrapAdmin().run()
 

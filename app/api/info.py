@@ -24,8 +24,7 @@ class ApiInfo:
     )
 
     USER_DOES_NOT_EXISTS = ApiInfoItem(
-        CODE="USER_DOES_NOT_EXISTS",
-        MESSAGE="User does not exists."
+        CODE="USER_DOES_NOT_EXISTS", MESSAGE="User does not exists."
     )
 
     INCORRECT_PASSWORD = ApiInfoItem(
@@ -34,13 +33,11 @@ class ApiInfo:
     )
 
     SAME_PASSWORD = ApiInfoItem(
-        CODE= "SAME_PASSWORD",
-        MESSAGE="New password can not be the same."
+        CODE="SAME_PASSWORD", MESSAGE="New password can not be the same."
     )
 
     PASSWORD_CHANGED_SUCCESSFULLY = ApiInfoItem(
-        CODE="PASSWORD_CHANGED_SUCCESSFULLY",
-        MESSAGE="Password changed successfully."
+        CODE="PASSWORD_CHANGED_SUCCESSFULLY", MESSAGE="Password changed successfully."
     )
 
     USER_RETRIEVED = ApiInfoItem(
@@ -83,10 +80,7 @@ class ApiInfo:
         MESSAGE="Internal server error.",
     )
 
-    FORBIDDEN = ApiInfoItem(
-        CODE="FORBIDDEN",
-        MESSAGE="Insufficient permissions."
-    )
+    FORBIDDEN = ApiInfoItem(CODE="FORBIDDEN", MESSAGE="Insufficient permissions.")
 
     EVENT_CREATED = ApiInfoItem(
         CODE="EVENT_CREATED",
@@ -122,7 +116,7 @@ class ApiInfo:
         CODE="SAME_ROLE",
         MESSAGE="Account role is the same as requested.",
     )
-    
+
     ROLE_CHANGED = ApiInfoItem(
         CODE="ROLE_CHANGED",
         MESSAGE="Account role changed successfully.",

@@ -2,20 +2,21 @@ import subprocess
 
 
 ### Shell commands ###
-# This file contains a set of functions which are responsible for 
+# This file contains a set of functions which are responsible for
 # streaming commands directly into the terminal.
 #  run - run command as current user
 # run_root - run command as root user, (attaches sudo to run function)
+
 
 class CommandFailed(RuntimeError):
     pass
 
 
 def run(
-        command: list[str], 
-        capture: bool = False,
-        env: dict[str, str] | None = None,
-        ) -> str:
+    command: list[str],
+    capture: bool = False,
+    env: dict[str, str] | None = None,
+) -> str:
     """
     Runs a command as the current user.
 
@@ -24,14 +25,10 @@ def run(
     env replaces the process environment for the child, which is how compose
     receives its values without depending on a .env file availability.
     """
-    result = subprocess.run(
-        command, text=True, capture_output=capture, env=env
-        )
+    result = subprocess.run(command, text=True, capture_output=capture, env=env)
 
     if result.returncode != 0:
-        raise CommandFailed(
-            f"{' '.join(command)} exited with {result.returncode}"
-        )
+        raise CommandFailed(f"{' '.join(command)} exited with {result.returncode}")
 
     return (result.stdout or "").strip()
 

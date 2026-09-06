@@ -8,13 +8,11 @@ from ..services.users import users_service_dependency
 
 
 def get_public_assistant(
-        users_service: users_service_dependency,
-        events_service: events_service_dependency,
-        ) -> PublicAssistant:
+    users_service: users_service_dependency,
+    events_service: events_service_dependency,
+) -> PublicAssistant:
     return PublicAssistant(users_service, events_service)
 
 
 ### Dependencies ###
-public_assistant_dependency = Annotated[
-    PublicAssistant, Depends(get_public_assistant)
-]
+public_assistant_dependency = Annotated[PublicAssistant, Depends(get_public_assistant)]

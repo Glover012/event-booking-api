@@ -11,7 +11,7 @@ from .response import ApiResponse
 @dataclass(frozen=True, slots=True)
 class HTTPErrorItem:
     """
-    HTTPException factory for fast raising HTTP Exception across API. 
+    HTTPException factory for fast raising HTTP Exception across API.
     Status code, detail, optional headers and error data for Client.
 
     Returns HTTPException object.
@@ -32,12 +32,12 @@ class HTTPErrorItem:
 class HTTPError:
     """
     Collection of predefined ready to use standard HTTP Errors.
-    Data has to be JSON serializable (dict, list, enum), otherwise it 
+    Data has to be JSON serializable (dict, list, enum), otherwise it
     fails while the handler builds the response and the client gets a 500.
 
     Raise them by calling:
 
-        raise HTTPError.FORBIDDEN(). 
+        raise HTTPError.FORBIDDEN().
 
     In `try except` block, raise them with the original error attached:
 

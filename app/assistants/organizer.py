@@ -12,15 +12,16 @@ from ..db.models import Events
 from .user import UserAssistant
 from ..api.exceptions import HTTPError
 
+
 class OrganizerAssistant(UserAssistant):
     """Helper for organizer level routes. Adds event ownership operations."""
 
     MINIMUM_ROLE = UserRole.ORGANIZER
 
     def create_event(
-            self,
-            create_event_request: CreateEventRequest,
-            ) -> Events:
+        self,
+        create_event_request: CreateEventRequest,
+    ) -> Events:
         """
         Creates an event owned by the authenticated organizer. Owner and
         status never come from the request body.
@@ -40,9 +41,9 @@ class OrganizerAssistant(UserAssistant):
         )
 
     def list_me_events(
-            self,
-            pagination: PaginationParams,
-            ) -> Page[EventResponseOwner]:
+        self,
+        pagination: PaginationParams,
+    ) -> Page[EventResponseOwner]:
         """
         Returns one page of the caller's own events, drafts included.
 
@@ -62,17 +63,17 @@ class OrganizerAssistant(UserAssistant):
         )
 
     def list_event_participants(
-            self,
-            event_id: int,
-            booking_status: BookingStatusFilter,
-            pagination: PaginationParams,
-            ) -> Page[ParticipantResponse]:
+        self,
+        event_id: int,
+        booking_status: BookingStatusFilter,
+        pagination: PaginationParams,
+    ) -> Page[ParticipantResponse]:
         """
-        Returns one page of the detailed bookings info made on the caller's 
+        Returns one page of the detailed bookings info made on the caller's
         own event, each one carrying the User account details.
 
         At first ownership is checked, so any attemt on reading foreign
-        event and a missing one end as 404 error before any booking info is 
+        event and a missing one end as 404 error before any booking info is
         read.
         """
         # Ownership check, only used as a guard function
@@ -95,19 +96,19 @@ class OrganizerAssistant(UserAssistant):
         )
 
     def change_event_status(
-            self,
-            event_id: int,
-            change_status_request: ChangeEventStatusRequest,
-            ) -> Events:
+        self,
+        event_id: int,
+        change_status_request: ChangeEventStatusRequest,
+    ) -> Events:
         """
         Change the caller's own event status.
 
         Change status uses `FOR UPDATE`, the same way like any booking path,
-        therefore the `Event` row is locked for the whole transaction. Any booking 
-        operation cannot land while changing the current status and writing a 
+        therefore the `Event` row is locked for the whole transaction. Any booking
+        operation cannot land while changing the current status and writing a
         new one, since booking possibility is determined by the event status.
 
-        Cancelling is unreachable here, since it has to cancel the bookings in the 
+        Cancelling is unreachable here, since it has to cancel the bookings in the
         same transaction.
         """
         event_model = self.events_service.get_user_owned_model(
@@ -123,10 +124,12 @@ class OrganizerAssistant(UserAssistant):
             raise HTTPError.SAME_STATUS()
 
         if new_status not in current_status.next_statuses:
-            raise HTTPError.INVALID_STATUS_TRANSITION({
-                "current": current_status,
-                "allowed": sorted(current_status.next_statuses),
-            })
+            raise HTTPError.INVALID_STATUS_TRANSITION(
+                {
+                    "current": current_status,
+                    "allowed": sorted(current_status.next_statuses),
+                }
+            )
 
         return self.events_service.update_status(event_model, new_status)
 
@@ -156,17 +159,17 @@ class OrganizerAssistant(UserAssistant):
         return self.events_service.publish(event_model)
 
     def update_event(
-            self,
-            event_id: int,
-            update_event_request: UpdateEventRequest,
-            ) -> Events:
+        self,
+        event_id: int,
+        update_event_request: UpdateEventRequest,
+    ) -> Events:
         """
         Update the editable columns of the caller's own event.
 
-        `FOR UPDATE` on `Event` row is used, so it is locked before the booked 
+        `FOR UPDATE` on `Event` row is used, so it is locked before the booked
         tickets are counted, so count_confirmed_tickets always returns real value.
 
-        Editing finished or cancelled events are refused. Their bookings are 
+        Editing finished or cancelled events are refused. Their bookings are
         kept as history.
 
         Dates are frozen once someone holds a ticket. Moving them would hand
@@ -174,7 +177,7 @@ class OrganizerAssistant(UserAssistant):
         nothing to notify them with yet.
 
         Changing status to 'locked' isn't required, but should be an option
-        that goes along with event eddition on front-end side, especially 
+        that goes along with event eddition on front-end side, especially
         while decreasing event capacity.
         """
         event_model = self.events_service.get_user_owned_model(
@@ -189,9 +192,7 @@ class OrganizerAssistant(UserAssistant):
         ):
             raise HTTPError.EVENT_NOT_EDITABLE()
 
-        confirmed_tickets = self.bookings_service.count_confirmed_tickets(
-            event_id
-        )
+        confirmed_tickets = self.bookings_service.count_confirmed_tickets(event_id)
 
         if update_event_request.capacity < confirmed_tickets:
             raise HTTPError.CAPACITY_BELOW_BOOKED_TICKETS()
@@ -238,7 +239,7 @@ class OrganizerAssistant(UserAssistant):
 
         A draft is the only event that cannot exist publicly and once event
         becomes a public, it can't go back to draft state.
-        Draft is never visible, never booked, no history worth keeping. 
+        Draft is never visible, never booked, no history worth keeping.
         Everything past that point is withdrawn by cancelling.
         """
         event_model = self.events_service.get_user_owned_model(

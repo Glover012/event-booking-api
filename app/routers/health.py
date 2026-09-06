@@ -9,6 +9,7 @@ health_router = APIRouter(
     tags=["health"],
 )
 
+
 ### Endpoints ###
 @health_router.get("", status_code=status.HTTP_200_OK)
 def health_check():
@@ -16,4 +17,4 @@ def health_check():
         "status": "ok",
         "service": settings.APP_NAME,
         "version": settings.APP_VERSION,
-        }
+    }

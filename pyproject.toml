@@ -34,3 +34,6 @@ init_typed = true
 # It is only for BaseModels that are constructed inside the code, like ApiResponse in app/api/response.py. 
 # Request and response models in endpoints are built by FastAPI, therefore aren't taken into account by mypy.
 init_forbid_extra = true 
+
+[tool.ruff]
+extend-exclude = ["alembic/versions"]

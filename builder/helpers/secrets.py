@@ -10,8 +10,8 @@ def create(environment: Environment) -> None:
     """
     Creates the secret directory and any missing secret inside it.
 
-    Existing secrets are never overwritten, since POSTGRES_PASSWORD only 
-    reaches Postgres while being initialised, so a new one would not match 
+    Existing secrets are never overwritten, since POSTGRES_PASSWORD only
+    reaches Postgres while being initialised, so a new one would not match
     a volume that already exists.
     """
     filesystem.create_directory(environment, environment.SECRET_DIR)
@@ -40,7 +40,7 @@ def exists(environment: Environment, name: str) -> bool:
     The container enviornment secret dir is 700 and owned by root, so
     commands must go throught sudo.
 
-    The local enviornment writes into user owned secret dir and is read 
+    The local enviornment writes into user owned secret dir and is read
     directly.
     """
     return filesystem.file_exists(environment, path(environment, name))
@@ -75,5 +75,7 @@ def print_bootstrap_password(environment: Environment) -> None:
         if input("Remove the password? [y/N] ").strip().lower() == "y":
             remove(environment, BOOTSTRAP_PASSWORD)
             print(red("bootstrap_admin_password removed."))
-    except EOFError: # No action is performed - in case Ctrl+D or GitHub Actions < /dev/null
+    except (
+        EOFError
+    ):  # No action is performed - in case Ctrl+D or GitHub Actions < /dev/null
         return

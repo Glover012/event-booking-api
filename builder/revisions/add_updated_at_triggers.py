@@ -4,6 +4,7 @@ Revision ID: add_updated_at_triggers
 Revises: __PREVIOUS__
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -49,6 +50,7 @@ def upgrade() -> None:
         FOR EACH ROW
         EXECUTE FUNCTION set_updated_at();
         """)
+
 
 def downgrade() -> None:
     """Downgrade schema."""

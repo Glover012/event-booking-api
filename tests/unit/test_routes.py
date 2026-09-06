@@ -26,8 +26,8 @@ def _method_path_pairs(app: FastAPI) -> list[tuple[str, str]]:
             if route.methods is not None:
                 pairs += [(method, route.path) for method in route.methods]
 
-        # The routes that come from an included APIRouter, so app.include_router(APIRouter) 
-        # are located inside _IncludedRouter instance. effective_candidates() function 
+        # The routes that come from an included APIRouter, so app.include_router(APIRouter)
+        # are located inside _IncludedRouter instance. effective_candidates() function
         # returns _EffectiveRouteContext per endpoint, which contains path and method
         elif isinstance(route, _IncludedRouter):
             for candidate in route.effective_candidates():
@@ -36,6 +36,7 @@ def _method_path_pairs(app: FastAPI) -> list[tuple[str, str]]:
 
     return pairs
 
+
 def test_method_path_pairs_returns(app):
     """
     Simple test whether _method_path_pairs acctualy returned anything.
@@ -43,6 +44,7 @@ def test_method_path_pairs_returns(app):
     """
 
     assert _method_path_pairs(app)
+
 
 def test_no_duplicate_method_path_pairs(app):
     """
@@ -53,9 +55,7 @@ def test_no_duplicate_method_path_pairs(app):
     """
     # Counter maps each hashable object to how many times it occurred in iterable
     duplicates = [
-        pair
-        for pair, count in Counter(_method_path_pairs(app)).items()
-        if count > 1
+        pair for pair, count in Counter(_method_path_pairs(app)).items() if count > 1
     ]
 
     # Duplicates are attached to error message

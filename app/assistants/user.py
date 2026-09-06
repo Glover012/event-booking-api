@@ -28,12 +28,12 @@ class UserAssistant:
     MINIMUM_ROLE = UserRole.USER
 
     def __init__(
-            self,
-            me_token_claims: MeTokenClaims,
-            users_service: UsersService,
-            events_service: EventsService,
-            bookings_service: BookingsService,
-            ) -> None:
+        self,
+        me_token_claims: MeTokenClaims,
+        users_service: UsersService,
+        events_service: EventsService,
+        bookings_service: BookingsService,
+    ) -> None:
         self.me_token_claims = me_token_claims
         self.users_service = users_service
         self.events_service = events_service
@@ -67,14 +67,14 @@ class UserAssistant:
         return self.me_model
 
     def change_me_password(
-            self,
-            change_password_request: ChangePasswordRequest,
-            ) -> None:
+        self,
+        change_password_request: ChangePasswordRequest,
+    ) -> None:
 
         if not PasswordHasher.verify_password(
             change_password_request.old_password,
             self.me_model.hashed_password,
-            ):
+        ):
             raise HTTPError.INCORRECT_PASSWORD()
 
         if PasswordHasher.verify_password(
@@ -85,15 +85,13 @@ class UserAssistant:
 
         self.users_service.update_password(
             self.me_model,
-            PasswordHasher.hash_password(
-                change_password_request.new_password
-            ),
+            PasswordHasher.hash_password(change_password_request.new_password),
         )
 
     def update_me_profile(
-            self,
-            update_profile_request: UpdateProfileRequest,
-            ) -> Users:
+        self,
+        update_profile_request: UpdateProfileRequest,
+    ) -> Users:
         """
         Updates the caller's own profile. The account is always self.me_model,
         so no target ever arrives from the request.
@@ -105,10 +103,10 @@ class UserAssistant:
         )
 
     def book_event(
-            self,
-            event_id: int,
-            create_booking_request: CreateBookingRequest,
-            ) -> Bookings:
+        self,
+        event_id: int,
+        create_booking_request: CreateBookingRequest,
+    ) -> Bookings:
         """
         BOOKING PATH
         ---
@@ -131,7 +129,10 @@ class UserAssistant:
 
         confirmed_tickets = self.bookings_service.count_confirmed_tickets(event_id)
 
-        if confirmed_tickets + create_booking_request.ticket_amount > event_model.capacity:
+        if (
+            confirmed_tickets + create_booking_request.ticket_amount
+            > event_model.capacity
+        ):
             raise HTTPError.NOT_ENOUGH_TICKETS()
 
         return self.bookings_service.create(
@@ -141,9 +142,9 @@ class UserAssistant:
         )
 
     def list_me_bookings(
-            self,
-            pagination: PaginationParams,
-            ) -> Page[BookingResponse]:
+        self,
+        pagination: PaginationParams,
+    ) -> Page[BookingResponse]:
         """
         Returns one page of the caller's own bookings, cancelled ones
         included, so the account keeps its full history.

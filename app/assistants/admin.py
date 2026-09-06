@@ -15,23 +15,21 @@ class AdminAssistant(OrganizerAssistant):
     MINIMUM_ROLE = UserRole.ADMIN
 
     def change_user_role(
-            self,
-            user_id: int,
-            change_role_request: ChangeRoleRequest,
-            ) -> Users:
+        self,
+        user_id: int,
+        change_role_request: ChangeRoleRequest,
+    ) -> Users:
         """
         Sets the role of another account.
         """
 
-        target_model = self.users_service.find_by_identity(
-            user_id
-        )
+        target_model = self.users_service.find_by_identity(user_id)
 
         if target_model is None:
             raise HTTPError.USER_DOES_NOT_EXISTS()
 
         # Identity operator works here, because
-        # each model was delivered by the same db session, 
+        # each model was delivered by the same db session,
         # therefore SQLAlchemy identity map returns the same
         # object for the same row in db
         if target_model is self.me_model:
@@ -41,9 +39,9 @@ class AdminAssistant(OrganizerAssistant):
             raise HTTPError.SAME_ROLE()
 
         return self.users_service.update_role(
-            target_model, 
+            target_model,
             change_role_request.role,
-            )
+        )
 
     def get_user(self, user_id: int) -> Users:
         """
@@ -57,9 +55,9 @@ class AdminAssistant(OrganizerAssistant):
         return target_model
 
     def list_users(
-            self,
-            pagination: PaginationParams,
-            ) -> Page[UserResponseAdmin]:
+        self,
+        pagination: PaginationParams,
+    ) -> Page[UserResponseAdmin]:
         """
         Returns one page of every account in the system.
 
@@ -88,9 +86,9 @@ class AdminAssistant(OrganizerAssistant):
         return self.events_service.get_model(event_id)
 
     def list_events(
-            self,
-            pagination: PaginationParams,
-            ) -> Page[EventResponseOwner]:
+        self,
+        pagination: PaginationParams,
+    ) -> Page[EventResponseOwner]:
         """
         Returns one page of every event in the system, drafts included.
 

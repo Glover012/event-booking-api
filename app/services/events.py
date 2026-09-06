@@ -40,16 +40,16 @@ class EventsService:
         return model
 
     def list_public_models(
-            self,
-            limit: int,
-            offset: int,
-            ) -> tuple[list[Events], int]:
+        self,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Events], int]:
         """
         Returns one page of publicly visible events with the total row count
         required by the Page model and the API client.
 
         Ordered deterministically: newest first, with id breaking ties.
-        Without a deterministic order OFFSET may return the same row on 
+        Without a deterministic order OFFSET may return the same row on
         two pages or skip one entirely.
         """
         query = self.public_query()
@@ -68,13 +68,13 @@ class EventsService:
         return models, total
 
     def create(
-            self,
-            create_event_request: CreateEventRequest,
-            owner_id: int,
-            ) -> Events:
+        self,
+        create_event_request: CreateEventRequest,
+        owner_id: int,
+    ) -> Events:
         """
         Inserts a new event. Owner comes from the authenticated and verified
-        organizer and status always starts as draft, so neither is taken from 
+        organizer and status always starts as draft, so neither is taken from
         the request body.
         """
         try:
@@ -108,10 +108,7 @@ class EventsService:
         same event will be added to queue.
         """
         model = (
-            self.public_query()
-            .filter(Events.id == event_id)
-            .with_for_update()
-            .first()
+            self.public_query().filter(Events.id == event_id).with_for_update().first()
         )
 
         if model is None:
@@ -119,11 +116,11 @@ class EventsService:
         return model
 
     def get_user_owned_model(
-            self,
-            owner_id: int,
-            event_id: int,
-            for_update: bool = False,
-            ) -> Events:
+        self,
+        owner_id: int,
+        event_id: int,
+        for_update: bool = False,
+    ) -> Events:
         """
         Returns the event model only that belongs to the User.
 
@@ -134,10 +131,7 @@ class EventsService:
         the transaction ends, the same way the booking path does.
         """
         query = self.db.query(Events).filter(
-            and_(
-                Events.id == event_id,
-                Events.owner_id == owner_id
-            ),
+            and_(Events.id == event_id, Events.owner_id == owner_id),
         )
 
         if for_update:
@@ -150,11 +144,11 @@ class EventsService:
         return event_model
 
     def list_user_owned_models(
-            self,
-            owner_id: int,
-            limit: int,
-            offset: int,
-            ) -> tuple[list[Events], int]:
+        self,
+        owner_id: int,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Events], int]:
         """
         Returns one page of the events the account owns with the total row
         count required by the Page model and the API client.
@@ -182,10 +176,10 @@ class EventsService:
         return models, total
 
     def update_status(
-            self,
-            event_model: Events,
-            status: EventStatus,
-            ) -> Events:
+        self,
+        event_model: Events,
+        status: EventStatus,
+    ) -> Events:
         """
         Set a new status on an existing event.
 
@@ -222,10 +216,10 @@ class EventsService:
             raise HTTPError.TRANSACTION_REFUSED() from e
 
     def update(
-            self,
-            event_model: Events,
-            update_event_request: UpdateEventRequest,
-            ) -> Events:
+        self,
+        event_model: Events,
+        update_event_request: UpdateEventRequest,
+    ) -> Events:
         """
         Update editable columns of an existing event.
 
@@ -297,9 +291,9 @@ class EventsService:
 
     def delete(self, event_model: Events) -> None:
         """
-        Removes an event row. Only for drafts, which cannot be public 
-        and therefore cannot be booked, so nothing references it. 
-        
+        Removes an event row. Only for drafts, which cannot be public
+        and therefore cannot be booked, so nothing references it.
+
         Additionally ON DELETE RESTRICT on bookings.event_id stays as the
         another protection layer.
         """
@@ -325,10 +319,10 @@ class EventsService:
         return model
 
     def list_models(
-            self,
-            limit: int,
-            offset: int,
-            ) -> tuple[list[Events], int]:
+        self,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Events], int]:
         """
         Returns one page of every event with the total row count required
         by the Page model and the API client.

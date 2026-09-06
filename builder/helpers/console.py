@@ -65,7 +65,9 @@ def confirm(question: str, items: Iterable[str] = ()) -> bool:
 
     try:
         return input("Continue? [y/N] ").strip().lower() == "y"
-    except EOFError: # No action is performed - in case Ctrl+D or GitHub Actions < /dev/null
+    except (
+        EOFError
+    ):  # No action is performed - in case Ctrl+D or GitHub Actions < /dev/null
         return False
 
 

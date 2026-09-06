@@ -13,13 +13,11 @@ class Settings(BaseSettings):
     APP_VERSION: str = "0.1.0"
     ENVIRONMENT: str
 
-
     ### Database credentials ###
     POSTGRES_USER: str
     POSTGRES_DB: str
     POSTGRES_HOST: str
     POSTGRES_PORT: int = 5432
-
 
     ### Bootstrap Admin ###
     BOOTSTRAP_ADMIN_USERNAME: str | None = None
@@ -27,11 +25,9 @@ class Settings(BaseSettings):
     BOOTSTRAP_ADMIN_FIRST_NAME: str = "System"
     BOOTSTRAP_ADMIN_LAST_NAME: str = "Administrator"
 
-
     ### Security ###
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-
 
     ### Secrets ###
     # Duplicated literally in docker-compose.yaml (bind mount) and setup.sh.
@@ -44,26 +40,26 @@ class Settings(BaseSettings):
     # DOCKER INFO
     # docker-compose don't load these secrets from .env, it only
     # takes into account the bind-mounted files, therefore
-    # it is possible to use secrets in .env locally, while 
+    # it is possible to use secrets in .env locally, while
     # containers are using only the files.
 
     # *_ENV fields have validation_alias equal to its @cached_property
     # Code uses only @cached_properties directly. Pydantic when Settings()
-    # is constructed during import, tries to load values from .env, 
-    # into *_ENV variables, by their valiadation_alias. If value is absent, 
+    # is constructed during import, tries to load values from .env,
+    # into *_ENV variables, by their valiadation_alias. If value is absent,
     # leaves None, so the @cached_property look for file to read.
 
     SECRET_KEY_ENV: SecretStr | None = Field(
         default=None, validation_alias="SECRET_KEY"
-        )
+    )
 
     POSTGRES_PASSWORD_ENV: SecretStr | None = Field(
         default=None, validation_alias="POSTGRES_PASSWORD"
-        )
+    )
 
     BOOTSTRAP_ADMIN_PASSWORD_ENV: SecretStr | None = Field(
         default=None, validation_alias="BOOTSTRAP_ADMIN_PASSWORD"
-        )
+    )
 
     def _resolve(self, filename: str, env_value: SecretStr | None) -> str:
         """
@@ -79,7 +75,7 @@ class Settings(BaseSettings):
     def BOOTSTRAP_ADMIN_PASSWORD(self) -> str:
         return self._resolve(
             "bootstrap_admin_password", self.BOOTSTRAP_ADMIN_PASSWORD_ENV
-            )
+        )
 
     @cached_property
     def SECRET_KEY(self) -> str:
@@ -90,8 +86,8 @@ class Settings(BaseSettings):
         return self._resolve("postgres_password", self.POSTGRES_PASSWORD_ENV)
 
     ### Database connection ###
-    # quote safe='' protects manually typed password which may contain 
-    # characters like @ or /, that alter URL structure it percent-encodes 
+    # quote safe='' protects manually typed password which may contain
+    # characters like @ or /, that alter URL structure it percent-encodes
     # them to their respective hexadecimal form like: @ -> %40
     # SQLAlchemy calls unquote while parsing URL, so it revieve original
     # password
@@ -109,12 +105,12 @@ class Settings(BaseSettings):
     LOG_MAX_BYTES: int = 2 * 1024 * 1024
     LOG_BACKUP_COUNT: int = 10
 
-
     ### Enviornment Var Config ###
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
 
 settings = Settings()

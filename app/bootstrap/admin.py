@@ -51,24 +51,20 @@ class CreateBootstrapAdmin:
 
             password = self.read_password()
             self.create_admin(password)
-            self.db.commit() # Required due to flush in create_admin
+            self.db.commit()  # Required due to flush in create_admin
 
             logger.info(
                 "Admin account '%s' created.",
                 settings.BOOTSTRAP_ADMIN_USERNAME,
             )
         finally:
-            self.db.close() # Flushed/non-commited transaction is rolled
+            self.db.close()  # Flushed/non-commited transaction is rolled
 
     def admin_exists(self) -> bool:
         """
         Checks whether any admin account is already present in db.
         """
-        admin = (
-            self.db.query(Users)
-            .filter(Users.role == UserRole.ADMIN.value)
-            .first()
-        )
+        admin = self.db.query(Users).filter(Users.role == UserRole.ADMIN.value).first()
         return admin is not None
 
     def credentials_configured(self) -> bool:
@@ -77,10 +73,12 @@ class CreateBootstrapAdmin:
         Names are skipped, due to defaults. The password is checked
         separately, since it has its own two sources.
         """
-        return all([
-            settings.BOOTSTRAP_ADMIN_USERNAME,
-            settings.BOOTSTRAP_ADMIN_EMAIL,
-        ])
+        return all(
+            [
+                settings.BOOTSTRAP_ADMIN_USERNAME,
+                settings.BOOTSTRAP_ADMIN_EMAIL,
+            ]
+        )
 
     def read_password(self) -> SecretStr:
         """
@@ -126,4 +124,4 @@ class CreateBootstrapAdmin:
                 f"'{settings.BOOTSTRAP_ADMIN_USERNAME}' or email "
                 f"'{settings.BOOTSTRAP_ADMIN_EMAIL}' already belongs "
                 f"to another account."
-                )
+            )

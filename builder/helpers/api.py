@@ -1,5 +1,6 @@
 import os
 
+
 def start_api() -> None:
     """
     Start uvicorn and replace current process. Local only, since the container

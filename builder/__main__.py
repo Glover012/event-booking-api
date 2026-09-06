@@ -22,8 +22,8 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Print status info about every enviornment. Cover info about log and secret"
             " files presence, since each enviornment has them in different location."
-            )
-        )
+        ),
+    )
     status_parser.set_defaults(handler=status)
 
     schema_parser = subparsers.add_parser(
@@ -56,7 +56,7 @@ def _add_environment(subparsers, environment: Environment) -> None:
         help=(
             "Start the environment, generate secrets when missing."
             "If secrets or volumes already exists, reuse them."
-        )
+        ),
     )
 
     # Stuff dedicated for local enviornment only
@@ -64,13 +64,11 @@ def _add_environment(subparsers, environment: Environment) -> None:
         up_parser.add_argument(
             "--no-api",
             action="store_true",
-            help=(
-                "Do not start uvicorn server. Used mainly in CI."
-            ),
+            help=("Do not start uvicorn server. Used mainly in CI."),
         )
 
     up_parser.set_defaults(handler=up, environment=environment)
-    
+
     down_parser = commands.add_parser(
         "down",
         help="Stop the environment. Nothing is removed, unless arguments provided.",
@@ -90,7 +88,7 @@ def _add_environment(subparsers, environment: Environment) -> None:
     down_parser.set_defaults(handler=down, environment=environment)
 
     files_parser = commands.add_parser(
-    "files",
+        "files",
         help=(
             "Create .env(only LOCAL) and any missing secret file without starting "
             "anything. Used mainly to run tests that need no database."
@@ -111,6 +109,7 @@ def main() -> None:
 
     except KeyboardInterrupt:
         raise SystemExit("Aborted.")
+
 
 if __name__ == "__main__":
     main()

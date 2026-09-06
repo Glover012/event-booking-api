@@ -11,7 +11,7 @@ from ..api.pagination import PaginationParams
 # Any additional query parameter will turn pagination params (page, per_page)
 # into an unreachable ?pagination= param.
 # Depends() resolves page and per_page as separate parameters from the
-# start, so it allows to composes them with any additional query param. 
+# start, so it allows to composes them with any additional query param.
 # With Depends() extra="forbid" doesn't work, so unknown parameters are
 # silently ignored without 422 error.
 pagination_dependency = Annotated[PaginationParams, Depends()]

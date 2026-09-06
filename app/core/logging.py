@@ -15,26 +15,24 @@ class Logger:
     HTTP access and server logs never share a file and rotate
     independently.
 
-    With logger_name left empty the root logger is set, that is 
-    owned by the process and a console handler is added. With 
-    logger_name given, the file handler is appended to that 
+    With logger_name left empty the root logger is set, that is
+    owned by the process and a console handler is added. With
+    logger_name given, the file handler is appended to that
     logger, leaving its level and existing handlers untouched.
     Uvicorn logs are set to propagate=false, therefore they don't
     reach root logger and the handlers.
     """
 
-    FORMAT = (
-        f"%(asctime)s - [%(levelname)s] - {settings.APP_NAME.upper()}[%(name)s]: %(message)s"
-        )
+    FORMAT = f"%(asctime)s - [%(levelname)s] - {settings.APP_NAME.upper()}[%(name)s]: %(message)s"
     DATE_FORMAT = "%Y-%m-%d %H:%M:%S UTC"
 
     def __init__(
-            self,
-            component: str,
-            logger_name: str | None = None,
-            ) -> None:
+        self,
+        component: str,
+        logger_name: str | None = None,
+    ) -> None:
         self.component = component
-        self.logger_name = logger_name # Root logger if None
+        self.logger_name = logger_name  # Root logger if None
         self.log_dir = os.path.join(settings.LOG_DIR, component)
         self.log_level_console = settings.LOG_LEVEL_CONSOLE.upper()
         self.max_bytes = settings.LOG_MAX_BYTES
@@ -70,7 +68,7 @@ class Logger:
     def build_file_handler(self) -> RotatingFileHandler:
         """
         File output, always at DEBUG. Rotates once the file grows past
-        LOG_MAX_BYTES and keeps LOG_BACKUP_COUNT number of older copies, 
+        LOG_MAX_BYTES and keeps LOG_BACKUP_COUNT number of older copies,
         so the directory never needs manual cleanup.
         """
         handler = RotatingFileHandler(
@@ -87,7 +85,7 @@ class Logger:
         """
         Creates the component directory and attaches the handlers.
 
-        The root logger is set to DEBUG so that all logs reach the 
+        The root logger is set to DEBUG so that all logs reach the
         handles and then are filtered by their log level.
         """
         os.makedirs(self.log_dir, exist_ok=True)

@@ -24,15 +24,15 @@ class ApiResponse(BaseModel, Generic[RESPONSE_MODEL]):
     def success(
         cls,
         info: ApiInfoItem,
-        # pydantic converts an ORM object into RESPONSE_MODEL through from_attributes 
-        # and type checker cannot confirm that conversion actually happened, therefore 
+        # pydantic converts an ORM object into RESPONSE_MODEL through from_attributes
+        # and type checker cannot confirm that conversion actually happened, therefore
         # add 'Any' to avoid type errors
         data: RESPONSE_MODEL | Any = None,
     ) -> ApiResponse[RESPONSE_MODEL]:
 
         return cls(
             status="success",
-            code=info.CODE, 
+            code=info.CODE,
             message=info.MESSAGE,
             data=data,
         )
@@ -41,7 +41,7 @@ class ApiResponse(BaseModel, Generic[RESPONSE_MODEL]):
     def fail(
         cls,
         info: ApiInfoItem,
-        data: RESPONSE_MODEL |  Any = None,
+        data: RESPONSE_MODEL | Any = None,
     ) -> ApiResponse[RESPONSE_MODEL]:
 
         return cls(

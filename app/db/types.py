@@ -9,7 +9,7 @@ from ..core.security import HashedPassword
 # to validate the data before it reaches the database
 # In case of password, we always expect HashedPassword Instance
 # The db must never recieve non hashed password, therefore this part
-# protects from such situations, especially when the code in 
+# protects from such situations, especially when the code in
 # other parts of application will be changing
 class HashedPasswordType(TypeDecorator):
     """
@@ -17,13 +17,13 @@ class HashedPasswordType(TypeDecorator):
 
     This is the barrier no ORM path can bypass - SQLAlchemy runs the bind
     processor on every write, so a plaintext password cannot reach the
-    column. Raw SQL skips it, but such a row will raise an error on the first 
+    column. Raw SQL skips it, but such a row will raise an error on the first
     read due to HashedPassword class constructor.
 
     hashed_password column is NOT NULL, therefore None raises an error
     """
 
-    impl = String # Represent column type in the db - VARCHAR
+    impl = String  # Represent column type in the db - VARCHAR
 
     # Allows SQLAlchemy to cache compiled statements that use this column.
     # Safe here, since this type takes no arguments and always behaves

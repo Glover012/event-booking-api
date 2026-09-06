@@ -15,9 +15,7 @@ class CreateBookingRequest(BaseModel):
     from the token.
     """
 
-    model_config = ConfigDict(
-        extra="forbid"
-        )
+    model_config = ConfigDict(extra="forbid")
 
     ticket_amount: int = Field(gt=0, lt=11)
 

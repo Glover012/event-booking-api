@@ -11,11 +11,13 @@ from ..api.info import ApiInfo
 
 logger = logging.getLogger(__name__)
 
+
 def register_custom_exception_handlers(app: FastAPI) -> None:
     """
     Function that set custom exception handlers.
     Uses custom ApiResponse body format.
     """
+
     ### Exception Handlers ###
     @app.exception_handler(HTTPException)
     async def http_exception_handler(
@@ -50,7 +52,7 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
         if exc.status_code >= 500:
             logger.error(*log_context, exc_info=exception_info)
 
-        # A cause is attached only where the code is explicitly raised 
+        # A cause is attached only where the code is explicitly raised
         # `from e`, so it marks an error worth a full traceback. Ordinary
         # client mistakes carry none and stay one line in log files.
         elif exc.__cause__ is not None:
@@ -88,10 +90,14 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
             validation_errors,
         )
 
-        content = ApiResponse[list[dict[str, Any]]].fail(
-            ApiInfo.VALIDATION_ERROR,
-            data=validation_errors,
-        ).model_dump(mode="json")
+        content = (
+            ApiResponse[list[dict[str, Any]]]
+            .fail(
+                ApiInfo.VALIDATION_ERROR,
+                data=validation_errors,
+            )
+            .model_dump(mode="json")
+        )
 
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -110,12 +116,16 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
             request.method,
             request.url.path,
             status.HTTP_500_INTERNAL_SERVER_ERROR,
-            exc_info=(type(exc), exc, exc.__traceback__)
+            exc_info=(type(exc), exc, exc.__traceback__),
         )
 
-        content = ApiResponse[None].error(
-            ApiInfo.RESPONSE_VALIDATION_ERROR,
-        ).model_dump(mode="json")
+        content = (
+            ApiResponse[None]
+            .error(
+                ApiInfo.RESPONSE_VALIDATION_ERROR,
+            )
+            .model_dump(mode="json")
+        )
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -137,9 +147,13 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
             exc_info=(type(exc), exc, exc.__traceback__),
         )
 
-        content = ApiResponse[None].error(
-            ApiInfo.INTERNAL_SERVER_ERROR,
-        ).model_dump(mode="json")
+        content = (
+            ApiResponse[None]
+            .error(
+                ApiInfo.INTERNAL_SERVER_ERROR,
+            )
+            .model_dump(mode="json")
+        )
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

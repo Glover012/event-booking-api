@@ -23,6 +23,7 @@ from .system import (
 ### Commands ###
 # Only body of the CLI commands and nothing else. Every helper is imported.
 
+
 def up(args: argparse.Namespace) -> None:
     """
     Brings enviornment up, refuses when any other event-booking
@@ -37,7 +38,9 @@ def up(args: argparse.Namespace) -> None:
 
     if active_environments:
         for running, services in active_environments.items():
-            print(f"{cyan((running.NAME).upper())} environment is up: {', '.join(services)}")
+            print(
+                f"{cyan((running.NAME).upper())} environment is up: {', '.join(services)}"
+            )
 
         print(bold("Run builder down first."))
         return
@@ -123,22 +126,22 @@ def status(args: argparse.Namespace) -> None:
 
 def rebuild_schema(args: argparse.Namespace) -> None:
     """
-    Regenerates the Alembic initial revision from the database models, 
+    Regenerates the Alembic initial revision from the database models,
     then re-applies the static revisions from builder/revisions.
 
     Runs using the local enviornment, because new revisions must be
     included in repository.
 
-    The database must be empty, since Alembic autogenerate compares the 
-    models with current db content, so a remaining volume from previous runs 
+    The database must be empty, since Alembic autogenerate compares the
+    models with current db content, so a remaining volume from previous runs
     would produce an empty migration instead of the whole inital schema.
 
-    Nothing is left behind after a succesfull run. The result is only a set of new 
-    revisions, that are verified by applying 'alembic upgrade head' and 
+    Nothing is left behind after a succesfull run. The result is only a set of new
+    revisions, that are verified by applying 'alembic upgrade head' and
     'alembic down base'.
     """
     revisions = sorted(ALEMBIC_VERSIONS_DIR.glob("*.py"))
-    existing = [] # Elements that will be removed/disabled
+    existing = []  # Elements that will be removed/disabled
 
     if running_services(LOCAL):
         existing.append("the running local containers")
@@ -171,10 +174,15 @@ def rebuild_schema(args: argparse.Namespace) -> None:
     try:
         compose(LOCAL, "up", "-d", "--wait")
 
-        run([
-            "alembic", "revision", "--autogenerate",
-            "-m", "Initial database structure",
-        ])
+        run(
+            [
+                "alembic",
+                "revision",
+                "--autogenerate",
+                "-m",
+                "Initial database structure",
+            ]
+        )
 
         copy_static()
 
@@ -195,7 +203,7 @@ def rebuild_schema(args: argparse.Namespace) -> None:
 
 def files(args: argparse.Namespace) -> None:
     """
-    Only creates .env(only LOCAL) and missing secret files, that are required to 
+    Only creates .env(only LOCAL) and missing secret files, that are required to
     start LOCAL enviornment.
 
     API settings, like DATABASE_URL, are resolved, during import, so

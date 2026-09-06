@@ -9,7 +9,9 @@ from .config import settings
 
 
 class PasswordHasher:
-    _PASSWORD_HASH: ClassVar[PasswordHash] = PasswordHash.recommended() # Argon2 is default
+    _PASSWORD_HASH: ClassVar[PasswordHash] = (
+        PasswordHash.recommended()
+    )  # Argon2 is default
 
     @classmethod
     def is_hash(cls, value: str) -> bool:
@@ -21,13 +23,12 @@ class PasswordHasher:
 
     @classmethod
     def hash_password(cls, password: SecretStr) -> HashedPassword:
-        return HashedPassword(
-            cls._PASSWORD_HASH.hash(password.get_secret_value())
-        )
+        return HashedPassword(cls._PASSWORD_HASH.hash(password.get_secret_value()))
 
     @classmethod
     def verify_password(
-        cls, password: SecretStr, hashed_password: HashedPassword) -> bool:
+        cls, password: SecretStr, hashed_password: HashedPassword
+    ) -> bool:
         return cls._PASSWORD_HASH.verify(
             password.get_secret_value(),
             hashed_password.get_secret_value(),
@@ -50,15 +51,15 @@ class HashedPassword(SecretStr):
 
 
 def create_access_token(
-        user_id: int | str,
-        username: str,
-        email: str,
-        user_role: str,
-        ) -> str:
+    user_id: int | str,
+    username: str,
+    email: str,
+    user_role: str,
+) -> str:
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
-        "sub": str(user_id), # PyJWT requires claims to be str
+        "sub": str(user_id),  # PyJWT requires claims to be str
         "username": username,
         "email": email,
         "role": user_role,
@@ -71,6 +72,7 @@ def create_access_token(
         algorithm=settings.ALGORITHM,
     )
 
+
 def decode_access_token(token: str) -> dict[str, Any]:
     payload = jwt.decode(
         jwt=token,
@@ -79,5 +81,5 @@ def decode_access_token(token: str) -> dict[str, Any]:
         # Protection of JWT structure
         # Token must have 'exp' and 'sub' claims
         options={"require": ["exp", "sub"]},
-        )
+    )
     return payload

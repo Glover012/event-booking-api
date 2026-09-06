@@ -10,13 +10,11 @@ ITEM = TypeVar("ITEM")
 
 class PaginationParams(BaseModel):
     """
-    Query parameters for every endpoint that is listing 
+    Query parameters for every endpoint that is listing
     many resources from db, like: events.
     """
 
-    model_config = ConfigDict(
-        extra="forbid"
-        ) # Unknown query parameters are rejected
+    model_config = ConfigDict(extra="forbid")  # Unknown query parameters are rejected
 
     page: int = Field(default=1, ge=1)
     per_page: int = Field(default=20, ge=1, le=100)

@@ -8,7 +8,6 @@ class SecretNotFound(RuntimeError):
 
 
 class Secrets:
-
     @staticmethod
     def read_secret(filename: str, secret_dir: str) -> SecretStr:
         """

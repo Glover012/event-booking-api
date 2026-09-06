@@ -11,6 +11,4 @@ def get_bookings_service(db: db_dependency) -> BookingsService:
 
 
 ### Dependencies ###
-bookings_service_dependency = Annotated[
-    BookingsService, Depends(get_bookings_service)
-]
+bookings_service_dependency = Annotated[BookingsService, Depends(get_bookings_service)]

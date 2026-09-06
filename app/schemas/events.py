@@ -2,7 +2,14 @@ from typing import Self
 from datetime import datetime, timezone
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator, AwareDatetime
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+    AwareDatetime,
+)
 
 
 class EventStatus(StrEnum):
@@ -32,9 +39,7 @@ _ALLOWED_TRANSITIONS = {
 class CreateEventRequest(BaseModel):
     """Event creation form. Validates request data and the date range."""
 
-    model_config = ConfigDict(
-        extra="forbid"
-        ) # No additional parameters allowed
+    model_config = ConfigDict(extra="forbid")  # No additional parameters allowed
 
     name: str = Field(min_length=4, max_length=127)
     description: str | None = Field(default=None, max_length=2047)
@@ -59,7 +64,7 @@ class CreateEventRequest(BaseModel):
             return value.strip()
         return value
 
-    # Two rules here. The start past-date check has no counterpart 
+    # Two rules here. The start past-date check has no counterpart
     # in the database, it only guards against obvious client mistakes.
     # The range check mirrors ck_events_ends_after_starts, but raises 422
     # with Pydantic error info instead of a 500 from the database server.
@@ -80,7 +85,7 @@ class UpdateEventRequest(CreateEventRequest):
     """
     Event edit form. Same shape as event creation.
 
-    Status and public visibility are absent, since each is configured 
+    Status and public visibility are absent, since each is configured
     by designated endpoint.
     """
 
@@ -111,8 +116,6 @@ class EventResponseOwner(EventResponsePublic):
 class ChangeEventStatusRequest(BaseModel):
     """Event status change request. Cancelling has its own endpoint."""
 
-    model_config = ConfigDict(
-        extra="forbid"
-        ) # No additional parameters allowed
+    model_config = ConfigDict(extra="forbid")  # No additional parameters allowed
 
     status: EventStatus

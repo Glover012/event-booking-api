@@ -1,5 +1,5 @@
-from typing import ClassVar, Any
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from typing import Any, ClassVar
 
 import jwt
 from pwdlib import PasswordHash
@@ -56,7 +56,7 @@ def create_access_token(
     email: str,
     user_role: str,
 ) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     expires_at = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     payload = {
         "sub": str(user_id),  # PyJWT requires claims to be str

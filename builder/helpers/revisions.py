@@ -1,4 +1,4 @@
-from ..config import ALEMBIC_VERSIONS_DIR, REVISIONS_DIR, REVISIONS
+from ..config import ALEMBIC_VERSIONS_DIR, REVISIONS, REVISIONS_DIR
 from ..system import CommandFailed, run
 
 # down_revision placeholder every static revision carries,

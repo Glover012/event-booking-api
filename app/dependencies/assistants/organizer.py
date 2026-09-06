@@ -4,9 +4,9 @@ from fastapi import Depends
 
 from ...assistants.organizer import OrganizerAssistant
 from ..auth import me_token_claims_dependency
-from ..services.users import users_service_dependency
-from ..services.events import events_service_dependency
 from ..services.bookings import bookings_service_dependency
+from ..services.events import events_service_dependency
+from ..services.users import users_service_dependency
 
 
 def get_organizer_assistant(

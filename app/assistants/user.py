@@ -1,16 +1,16 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from ..api.pagination import Page, PaginationParams
-from ..schemas.users import ChangePasswordRequest, UserRole, UpdateProfileRequest
-from ..schemas.bookings import CreateBookingRequest, BookingResponse, BookingStatus
-from ..schemas.events import EventStatus
-from ..services.users import UsersService
-from ..services.events import EventsService
-from ..services.bookings import BookingsService
-from ..core.security import PasswordHasher
-from ..db.models import Users, Bookings
 from ..api.exceptions import HTTPError
+from ..api.pagination import Page, PaginationParams
+from ..core.security import PasswordHasher
+from ..db.models import Bookings, Users
 from ..schemas.auth import MeTokenClaims
+from ..schemas.bookings import BookingResponse, BookingStatus, CreateBookingRequest
+from ..schemas.events import EventStatus
+from ..schemas.users import ChangePasswordRequest, UpdateProfileRequest, UserRole
+from ..services.bookings import BookingsService
+from ..services.events import EventsService
+from ..services.users import UsersService
 
 
 class UserAssistant:
@@ -123,7 +123,7 @@ class UserAssistant:
 
         if (
             event_model.status != EventStatus.ACTIVE.value
-            or event_model.starts_at <= datetime.now(timezone.utc)
+            or event_model.starts_at <= datetime.now(UTC)
         ):
             raise HTTPError.EVENT_NOT_BOOKABLE()
 

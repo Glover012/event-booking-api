@@ -1,12 +1,12 @@
 from fastapi import APIRouter, status
 
+from ..api.info import ApiInfo
 from ..api.pagination import Page
 from ..api.response import ApiResponse
-from ..api.info import ApiInfo
-from ..schemas.users import UserResponse, ChangePasswordRequest, UpdateProfileRequest
-from ..schemas.bookings import BookingResponse, CreateBookingRequest
-from ..dependencies.assistants import user_assistant_dependency
 from ..dependencies import pagination_dependency
+from ..dependencies.assistants import user_assistant_dependency
+from ..schemas.bookings import BookingResponse, CreateBookingRequest
+from ..schemas.users import ChangePasswordRequest, UpdateProfileRequest, UserResponse
 
 ### API Router ###
 user_router = APIRouter(tags=["user"])

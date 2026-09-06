@@ -1,13 +1,12 @@
 from fastapi import APIRouter, status
 
-from ..dependencies.assistants import admin_assistant_dependency
-from ..api.response import ApiResponse
 from ..api.info import ApiInfo
-from ..schemas.users import ChangeRoleRequest, UserResponseAdmin
-from ..schemas.events import EventResponseOwner
 from ..api.pagination import Page
+from ..api.response import ApiResponse
 from ..dependencies import pagination_dependency
-
+from ..dependencies.assistants import admin_assistant_dependency
+from ..schemas.events import EventResponseOwner
+from ..schemas.users import ChangeRoleRequest, UserResponseAdmin
 
 ### API Router ###
 # All admin paths share the prefix, unlike the other role routers.

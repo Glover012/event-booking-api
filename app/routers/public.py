@@ -1,12 +1,12 @@
 from fastapi import APIRouter, status
 
-from ..api.response import ApiResponse
-from ..api.pagination import Page
 from ..api.info import ApiInfo
-from ..schemas.events import EventResponsePublic
-from ..schemas.users import UserResponse, RegisterUserRequest
+from ..api.pagination import Page
+from ..api.response import ApiResponse
 from ..dependencies import pagination_dependency
 from ..dependencies.assistants import public_assistant_dependency
+from ..schemas.events import EventResponsePublic
+from ..schemas.users import RegisterUserRequest, UserResponse
 
 ### API Router ###
 # No prefix: this router serves more than one resource, so full paths

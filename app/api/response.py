@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-from typing import Generic, Literal, TypeVar, Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
 from .info import ApiInfoItem
 
 
-RESPONSE_MODEL = TypeVar("RESPONSE_MODEL")
-
-
-class ApiResponse(BaseModel, Generic[RESPONSE_MODEL]):
+class ApiResponse[RESPONSE_MODEL](BaseModel):
     """
     Standard API response format with status, code, message, and optional data.
     """

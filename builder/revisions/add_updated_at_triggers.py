@@ -5,7 +5,7 @@ Revises: __PREVIOUS__
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
@@ -13,9 +13,9 @@ from alembic import op
 # down_revision is filled in by builder rebuild-schema when this file is copied
 # into alembic/versions, since the revision it follows is auto-generated
 revision: str = "add_updated_at_triggers"
-down_revision: Union[str, Sequence[str], None] = "__PREVIOUS__"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "__PREVIOUS__"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

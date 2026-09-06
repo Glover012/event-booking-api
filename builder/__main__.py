@@ -1,7 +1,7 @@
 import argparse
 
-from .commands import down, rebuild_schema, status, up, files
-from .config import ENVIRONMENTS, Environment, LOCAL
+from .commands import down, files, rebuild_schema, status, up
+from .config import ENVIRONMENTS, LOCAL, Environment
 from .system import CommandFailed
 
 

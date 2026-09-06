@@ -3,16 +3,16 @@ import logging
 from fastapi import FastAPI
 
 from .core.config import settings
-from .routers import (
-    health_router,
-    auth_router,
-    public_router,
-    user_router,
-    organizer_router,
-    admin_router,
-)
 from .core.exception_handlers import register_custom_exception_handlers
 from .core.logging import Logger
+from .routers import (
+    admin_router,
+    auth_router,
+    health_router,
+    organizer_router,
+    public_router,
+    user_router,
+)
 
 ### Logger ###
 logger = logging.getLogger(__name__)

@@ -14,12 +14,10 @@ from .paths import (
     REPOSITORY_DIR,
     REVISIONS_DIR,
 )
-
-from .secrets import (
-    SECRET_NAMES,
-    BOOTSTRAP_PASSWORD,
-)
-
 from .revisions import (
     REVISIONS,
+)
+from .secrets import (
+    BOOTSTRAP_PASSWORD,
+    SECRET_NAMES,
 )

@@ -1,7 +1,7 @@
-from enum import StrEnum
 import re
+from enum import StrEnum
 
-from pydantic import BaseModel, Field, SecretStr, EmailStr, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 
 ### Static Error Info ###
 PASSWORD_REQUIREMENTS_ERROR = (

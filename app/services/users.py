@@ -2,9 +2,9 @@ from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..db.models import Users
 from ..api.exceptions import HTTPError
 from ..core.security import HashedPassword
+from ..db.models import Users
 from ..schemas.users import UserRole
 
 

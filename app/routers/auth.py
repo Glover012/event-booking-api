@@ -1,11 +1,11 @@
 from typing import Annotated
-from pydantic import SecretStr
 
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import SecretStr
 
-from ..schemas.auth import Token
 from ..dependencies.assistants import auth_assistant_dependency
+from ..schemas.auth import Token
 
 ### API Router ###
 auth_router = APIRouter(prefix="/auth", tags=["auth"])

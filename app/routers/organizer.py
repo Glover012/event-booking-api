@@ -1,17 +1,17 @@
 from fastapi import APIRouter, status
 
-from ..api.pagination import Page
-from ..dependencies import pagination_dependency
-from ..api.response import ApiResponse
 from ..api.info import ApiInfo
+from ..api.pagination import Page
+from ..api.response import ApiResponse
+from ..dependencies import pagination_dependency
+from ..dependencies.assistants import organizer_assistant_dependency
+from ..schemas.bookings import BookingStatusFilter, ParticipantResponse
 from ..schemas.events import (
     ChangeEventStatusRequest,
     CreateEventRequest,
     EventResponseOwner,
     UpdateEventRequest,
 )
-from ..schemas.bookings import BookingStatusFilter, ParticipantResponse
-from ..dependencies.assistants import organizer_assistant_dependency
 
 ### API Router ###
 organizer_router = APIRouter(prefix="/organizer", tags=["organizer"])

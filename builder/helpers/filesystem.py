@@ -83,17 +83,19 @@ def write_secret_file(
     Both enviornments take this path. The local one could write directly,
     but then the rule about the command line would hold in one branch only.
     """
-    # Must use delete=False becase on close() it is automatically deleted
-    handle = tempfile.NamedTemporaryFile("w", delete=False)
+    # delete=False, because close() would remove the file before install
+    # can read it.
+    with tempfile.NamedTemporaryFile("w", delete=False) as handle:
+        temporary = handle.name
 
-    try:
-        handle.write(content)
-        handle.close()
+        try:
+            handle.write(content)
+            handle.close()
 
-        _run(environment, ["install", "-m", mode, handle.name, str(path)])
+            _run(environment, ["install", "-m", mode, temporary, str(path)])
 
-    finally:
-        os.unlink(handle.name)
+        finally:
+            os.unlink(temporary)
 
 
 def read_file(environment: Environment, path: Path) -> str:

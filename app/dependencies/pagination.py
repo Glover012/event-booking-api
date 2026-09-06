@@ -4,7 +4,6 @@ from fastapi import Depends
 
 from ..api.pagination import PaginationParams
 
-
 ### Dependencies ###
 # Depends(), not Query(). FastAPI expands a Pydantic base model into its
 # own query fields only while that model is the endpoint's only query parameter.

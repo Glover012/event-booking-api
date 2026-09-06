@@ -2,10 +2,10 @@ from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..db.models import Events, Bookings
-from ..schemas.events import CreateEventRequest, EventStatus, UpdateEventRequest
-from ..schemas.bookings import BookingStatus
 from ..api.exceptions import HTTPError
+from ..db.models import Bookings, Events
+from ..schemas.bookings import BookingStatus
+from ..schemas.events import CreateEventRequest, EventStatus, UpdateEventRequest
 
 
 class EventsService:

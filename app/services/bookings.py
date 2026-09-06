@@ -1,10 +1,10 @@
-from sqlalchemy import func, and_, Row
+from sqlalchemy import Row, and_, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from ..api.exceptions import HTTPError
 from ..db.models import Bookings, Users
 from ..schemas.bookings import BookingStatus, BookingStatusFilter
-from ..api.exceptions import HTTPError
 
 
 class BookingsService:

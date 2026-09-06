@@ -2,7 +2,6 @@ from fastapi import APIRouter, status
 
 from ..core.config import settings
 
-
 ### Health Router ###
 health_router = APIRouter(
     prefix="/health",

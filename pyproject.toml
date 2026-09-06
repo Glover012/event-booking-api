@@ -37,3 +37,7 @@ init_forbid_extra = true
 
 [tool.ruff]
 extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore re-exports, since a package __init__ imports names for other modules to use.
+"__init__.py" = ["F401"]

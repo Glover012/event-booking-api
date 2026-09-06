@@ -1,7 +1,7 @@
 import secrets
 from pathlib import Path
 
-from ..config import Environment, SECRET_NAMES, BOOTSTRAP_PASSWORD
+from ..config import BOOTSTRAP_PASSWORD, SECRET_NAMES, Environment
 from . import filesystem
 from .console import bold, green, red, yellow
 

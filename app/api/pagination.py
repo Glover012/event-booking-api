@@ -1,11 +1,7 @@
 import math
-
-from typing import Generic, Self, TypeVar
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field
-
-
-ITEM = TypeVar("ITEM")
 
 
 class PaginationParams(BaseModel):
@@ -28,7 +24,7 @@ class PaginationParams(BaseModel):
         return (self.page - 1) * self.per_page
 
 
-class Page(BaseModel, Generic[ITEM]):
+class Page[ITEM](BaseModel):
     """
     One page of results. Total counts every row in db matching the query,
     not the rows returned, so the client can work out the number of pages

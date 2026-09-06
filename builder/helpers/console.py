@@ -1,6 +1,5 @@
-from collections.abc import Iterable
 import sys
-
+from collections.abc import Iterable
 
 # ANSI escape codes, disabled when the output is not a terminal
 _COLOR = sys.stdout.isatty()

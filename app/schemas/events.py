@@ -1,14 +1,14 @@
-from typing import Self
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Self
 
 from pydantic import (
+    AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
     field_validator,
     model_validator,
-    AwareDatetime,
 )
 
 
@@ -72,7 +72,7 @@ class CreateEventRequest(BaseModel):
     # of the timezone client operates on.
     @model_validator(mode="after")
     def validate_date_range(self) -> Self:
-        if self.starts_at < datetime.now(timezone.utc):
+        if self.starts_at < datetime.now(UTC):
             raise ValueError("Event start date must not be in the past.")
 
         if self.ends_at <= self.starts_at:

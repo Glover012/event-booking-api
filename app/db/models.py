@@ -1,8 +1,5 @@
 from datetime import datetime
 
-from ..core.security import HashedPassword
-from .types import HashedPasswordType
-
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -17,7 +14,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column
 
+from ..core.security import HashedPassword
 from .database import Base
+from .types import HashedPasswordType
 
 
 class Users(Base):

@@ -1,4 +1,7 @@
+from ..api.exceptions import HTTPError
 from ..api.pagination import Page, PaginationParams
+from ..db.models import Events
+from ..schemas.bookings import BookingStatusFilter, ParticipantResponse
 from ..schemas.events import (
     ChangeEventStatusRequest,
     CreateEventRequest,
@@ -6,11 +9,8 @@ from ..schemas.events import (
     EventStatus,
     UpdateEventRequest,
 )
-from ..schemas.bookings import BookingStatusFilter, ParticipantResponse
 from ..schemas.users import UserRole
-from ..db.models import Events
 from .user import UserAssistant
-from ..api.exceptions import HTTPError
 
 
 class OrganizerAssistant(UserAssistant):

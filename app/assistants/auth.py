@@ -1,10 +1,10 @@
 from pydantic import SecretStr
 
+from ..api.exceptions import HTTPError
 from ..core.security import PasswordHasher, create_access_token
 from ..db.models import Users
 from ..schemas.auth import Token
 from ..services.users import UsersService
-from ..api.exceptions import HTTPError
 
 
 class AuthAssistant:

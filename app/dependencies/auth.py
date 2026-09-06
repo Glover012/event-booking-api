@@ -5,10 +5,9 @@ from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import ValidationError
 
-from ..schemas.auth import MeTokenClaims
-from ..core.security import decode_access_token
 from ..api.exceptions import HTTPError
-
+from ..core.security import decode_access_token
+from ..schemas.auth import MeTokenClaims
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="auth/token",

@@ -2,7 +2,7 @@ from collections import Counter
 
 import pytest
 from fastapi import FastAPI
-from fastapi.routing import APIRoute, _IncludedRouter, _EffectiveRouteContext
+from fastapi.routing import APIRoute, _EffectiveRouteContext, _IncludedRouter
 
 from app.main import create_app
 

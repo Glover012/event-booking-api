@@ -1,3 +1,4 @@
+from ..api.exceptions import HTTPError
 from ..api.pagination import Page, PaginationParams
 from ..core.security import PasswordHasher
 from ..db.models import Events, Users
@@ -5,7 +6,6 @@ from ..schemas.events import EventResponsePublic
 from ..schemas.users import RegisterUserRequest, UserRole
 from ..services.events import EventsService
 from ..services.users import UsersService
-from ..api.exceptions import HTTPError
 
 
 class PublicAssistant:

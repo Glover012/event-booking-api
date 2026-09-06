@@ -1,6 +1,5 @@
 import subprocess
 
-
 ### Shell commands ###
 # This file contains a set of functions which are responsible for
 # streaming commands directly into the terminal.
@@ -25,7 +24,9 @@ def run(
     env replaces the process environment for the child, which is how compose
     receives its values without depending on a .env file availability.
     """
-    result = subprocess.run(command, text=True, capture_output=capture, env=env)
+    result = subprocess.run(
+        command, text=True, capture_output=capture, env=env, check=False
+    )
 
     if result.returncode != 0:
         raise CommandFailed(f"{' '.join(command)} exited with {result.returncode}")

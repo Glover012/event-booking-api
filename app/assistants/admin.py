@@ -1,10 +1,9 @@
-from ..db.models import Users, Events
-from ..schemas.users import UserRole, ChangeRoleRequest
-from ..schemas.events import EventResponseOwner
-from .organizer import OrganizerAssistant
 from ..api.exceptions import HTTPError
-from ..schemas.users import UserResponseAdmin
-from ..api.pagination import PaginationParams, Page
+from ..api.pagination import Page, PaginationParams
+from ..db.models import Events, Users
+from ..schemas.events import EventResponseOwner
+from ..schemas.users import ChangeRoleRequest, UserResponseAdmin, UserRole
+from .organizer import OrganizerAssistant
 
 
 class AdminAssistant(OrganizerAssistant):

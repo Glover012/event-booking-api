@@ -16,3 +16,7 @@ builder = "builder.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["app*", "builder*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-config"

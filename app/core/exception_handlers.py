@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 import logging
 
 from fastapi import FastAPI, HTTPException, Request, status
@@ -26,7 +26,9 @@ def register_custom_exception_handlers(app: FastAPI) -> None:
         if isinstance(exc.detail, ApiResponse):
             content = exc.detail.model_dump(mode="json")
         else:
-            response_status = "error" if exc.status_code >= 500 else "fail"
+            response_status: Literal["error", "fail"] = (
+                "error" if exc.status_code >= 500 else "fail"
+            )
 
             content = ApiResponse[None](
                 status=response_status,

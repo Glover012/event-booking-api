@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Generic, Literal, TypeVar
+from typing import Generic, Literal, TypeVar, Any
 
 from pydantic import BaseModel
 
@@ -24,12 +24,15 @@ class ApiResponse(BaseModel, Generic[RESPONSE_MODEL]):
     def success(
         cls,
         info: ApiInfoItem,
-        data: RESPONSE_MODEL | None = None,
+        # pydantic converts an ORM object into RESPONSE_MODEL through from_attributes 
+        # and type checker cannot confirm that conversion actually happened, therefore 
+        # add 'Any' to avoid type errors
+        data: RESPONSE_MODEL | Any = None,
     ) -> ApiResponse[RESPONSE_MODEL]:
 
         return cls(
             status="success",
-            code=info.CODE,
+            code=info.CODE, 
             message=info.MESSAGE,
             data=data,
         )
@@ -38,7 +41,7 @@ class ApiResponse(BaseModel, Generic[RESPONSE_MODEL]):
     def fail(
         cls,
         info: ApiInfoItem,
-        data: RESPONSE_MODEL | None = None,
+        data: RESPONSE_MODEL |  Any = None,
     ) -> ApiResponse[RESPONSE_MODEL]:
 
         return cls(
@@ -52,7 +55,7 @@ class ApiResponse(BaseModel, Generic[RESPONSE_MODEL]):
     def error(
         cls,
         info: ApiInfoItem,
-        data: RESPONSE_MODEL | None = None,
+        data: RESPONSE_MODEL | Any = None,
     ) -> ApiResponse[RESPONSE_MODEL]:
 
         return cls(

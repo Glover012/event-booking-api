@@ -1,9 +1,10 @@
 import logging
 from typing import Any, Literal
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
 
 from ..api.info import ApiInfo
 from ..api.response import ApiResponse

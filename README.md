@@ -26,6 +26,7 @@ A backend system for publishing, booking and maintaining events, based on REST A
 - [🧱 Builder CLI](#-builder-cli)
 - [🧪 Tests](#-tests)
 - [🤖 CI](#-ci)
+- [🪝 Git hooks](#-git-hooks)
 - [🚧 Known limitations](#-known-limitations)
 - [🛣️ Roadmap](#️-roadmap)
 - [👤 Author contact](#-author-contact)
@@ -314,6 +315,20 @@ Three jobs run on every push to `main` and `dev`, and on every pull request to `
 | types | `mypy` |
 
 Jobs are separated, so a failing one does not hide the others. Dependencies are installed from `requirements/requirements-dev.lock`, so a new release of some tool or framework will not turn the build red.
+
+## 🪝 Git hooks
+A `pre-commit` hook runs the linter, the formatter check and the type checker before every commit.
+
+The tests are skipped here, since they may take a while to run once there are more of them. Tests run in CI.
+
+The hook is located in `.githooks/pre-commit` instead of `.git/hooks/`, so it stays in the repository. 
+
+This hook does not work until git is pointed at it. Enable it with:
+```bash
+git config core.hooksPath .githooks
+```
+
+Hooks can be skipped with `git commit --no-verify`.
 
 ## 🚧 Known limitations
 - Only one environment at a time, since local and container both occupy port 8000.

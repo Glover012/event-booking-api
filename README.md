@@ -8,12 +8,12 @@
 ![Pull Requests](https://img.shields.io/github/issues-search/Glover012/event-booking-api?query=is%3Apr&label=Pull%20Requests)
 ![License](https://img.shields.io/github/license/Glover012/event-booking-api)
 
-A backend system for publishing, booking and maintaining events, based on REST API architecture with a role-based access control model.
-Built with **FastAPI**, **Pydantic**, **SQLAlchemy**, **PostgreSQL**, and containerized with **Docker**.
+A backend system for publishing, booking and maintaining events, based on REST API architecture with a role-based access control model. Built with **FastAPI**, **Pydantic**, **SQLAlchemy**, **PostgreSQL**, and containerized with **Docker**.
 
 ## 🚀 Table of contents
 - [📘 About the project](#-about-the-project)
 - [✨ Features](#-features)
+- [🎯 Design objectives](#-design-objectives)
 - [📐 Design notes](#-design-notes)
 - [📑 API endpoints overview](#-api-endpoints-overview)
 - [📦 API response structure](#-api-response-structure)
@@ -32,10 +32,8 @@ Built with **FastAPI**, **Pydantic**, **SQLAlchemy**, **PostgreSQL**, and contai
 - [📄 License](#-license)
 
 ## 📘 About the project
-Event Booking API is an educational backend project built as a REST API. It provides a set of endpoints to browse, book, create,
-publish and edit events. It has a built-in RBAC model, JWT authentication, password hashing, ownership control, request and
-response validation, and protection against overbooking. It ships with a Builder CLI for a quick installation process and system
-resource management.
+Event Booking API is an educational backend project built as a REST API. It provides a set of endpoints to browse, book, create, publish and edit events. It has a built-in RBAC model, JWT authentication, password hashing, ownership control, request
+and response validation, and protection against overbooking. It ships with a Builder CLI for a quick installation process and system resource management.
 
 ## ✨ Features
 ### API
@@ -46,6 +44,7 @@ resource management.
 - Pagination on listing endpoints, returning the total row count alongside the page
 - Uniform response envelope on every answer, success, fail or error, with two documented exceptions
 - Registered exception handlers, so no error path answers outside the envelope
+- Maintainable and simple to expand application structure
 
 ### Access control and security
 - JWT authentication
@@ -59,7 +58,8 @@ resource management.
 - Row locking that prevents an event from being oversold
 - One active booking per user and event, enforced by an index
 - PostgreSQL database with constraints, indexes and triggers
-- Custom SQLAlchemy column type that refuses anything but a hashed password, on write and on read
+- Custom SQLAlchemy column type that refuses anything but a hashed password, on write and on read. 
+  Moreover this mechanic can be easly implemented for different columns, in order to protect sensitive data.
 - Application works explicitly on UTC time
 
 ### Application environment
@@ -68,8 +68,18 @@ resource management.
 - Alembic migrations applied automatically on container start
 - Rotating logging per component: application, CLI, HTTP access and server
 
+## 🎯 Design objectives
+- Keep the endpoint body as short and simple as possible: no logic, no database communication, no error handling.
+- Keep the application code and structure simple and maintainable.
+- Divide the API elements by responsibility.
+- Avoid code repetition (still a work in progress).
+- Keep detailed docstrings and comments, since the project is educational.
+- Protect sensitive data: keep it out of logs, responses and the command line.
+- Answer with one response shape everywhere, so a client always parses a single structure.
+- Implement the data safeguards PostgreSQL provides(in progress)
+
 ## 📐 Design notes
-The detailed design description, including the diagrams, is kept in a separate document, because it is too much for a README: [Design notes](docs/design.md).
+The detailed design description, including the diagrams, is kept in a separate document, because it is too much for a README. [Design notes](docs/design.md).
 
 ## 📑 API endpoints overview
 25 endpoints. The interactive documentation via Swagger UI can be accessed at `http://localhost:8000/docs`, once the app is running.
@@ -211,7 +221,8 @@ Create and activate a virtual environment:
 python3.14 -m venv .venv && source .venv/bin/activate
 ```
 
-Install the project together with its development dependencies. `-e .` installs the `builder` command into the virtual environment, so while the environment is active `builder` is on `PATH`. Commands that only read, such as `builder status`, work from any directory. Other builder commands should be executed from the repository root.
+Install the project together with its development dependencies. `-e .` installs the `builder` command into the virtual environment, so while the environment is active `builder` is on `PATH`. Commands that only read, such as `builder status`, work
+from any directory. Other builder commands should be executed from the repository root.
 ```bash
 pip install -e . -r requirements/requirements-dev.lock
 ```
@@ -238,7 +249,7 @@ Stop it with `Ctrl+C`, then `builder local down` to stop the database container.
 A built-in CLI that starts and tears down the application, offering two environments and a set of commands for the resources around them.
 
 ### Commands
-| Command | Effect |
+| Command | Description |
 |---|---|
 | builder local up | Start the environment, generate secrets when missing. Existing secrets and volumes are reused. Ends by replacing the terminal process with uvicorn. |
 | builder local up --no-api | The same, without starting the uvicorn server. Used mainly in CI. |
@@ -251,8 +262,10 @@ A built-in CLI that starts and tears down the application, offering two environm
 | builder status | Print status for every environment: running services, and the presence of log files, secrets and volumes. |
 | builder rebuild-schema | Regenerate the Alembic revisions from the database models and re-apply the static revisions. Destructive, operates on the local environment only. |
 
-- `--data`: removes the volume and the secrets together on purpose. The secrets directory holds `postgres_password`, and that password only reaches Postgres while its data directory is being initialised, so a newly generated one would leave a database nothing can log into.
-- `rebuild-schema`: asks once, then removes the components of the local environment: volume, secrets, logs and every file in `alembic/versions`. It regenerates the initial revision from the db models, re-applies the static revision templates from `builder/revisions` on top of it, and verifies the migrations in both directions with `alembic upgrade head` and `alembic downgrade base`.
+- `--data`: removes the volume and the secrets together on purpose. The secrets directory holds `postgres_password`, and that password only reaches Postgres while its data directory is being initialised, so a newly generated one would leave a
+  database nothing can log into.
+- `rebuild-schema`: asks once, then removes the components of the local environment: volume, secrets, logs and every file in `alembic/versions`. It regenerates the initial revision from the db models, re-applies the static revision templates from
+  `builder/revisions` on top of it, and verifies the migrations in both directions with `alembic upgrade head` and `alembic downgrade base`.
 
 ### Environments
 The application has two configured environments, **local** and **container**.
@@ -263,7 +276,8 @@ Postgres server in a container, the API on the host with `uvicorn --reload`, so 
 Requires a `.env` file, which is regenerated on every `builder local up` from the local environment configuration.
 
 #### Container
-Everything in containers, the API started from the Dockerfile `CMD` without reload. Migrations and the bootstrap admin run from `docker-entrypoint.sh`. Does not use a `.env` file, since every variable is passed through the environment of the subprocess that runs docker.
+Everything in containers, the API started from the Dockerfile `CMD` without reload. Migrations and the bootstrap admin run from `docker-entrypoint.sh`. Does not use a `.env` file, since every variable is passed through the environment of the
+subprocess that runs docker.
 
 > At the moment both **cannot run at the same time**, since both occupy the same host port 8000. `builder <environment> up` refuses to start when the other environment is already running.
 
@@ -273,7 +287,8 @@ Configuration of the environments can be found here: `builder/config/environment
 ### Secrets
 The three secret files are created on `builder <env> up` once and then reused, unless removed.
 
-The Builder CLI never writes secrets into `.env` and never passes them as environment variables to subprocesses. All secrets are written into files: the local environment keeps them in `secrets/` inside the repository, the container environment in `/var/lib/event-booking/secrets`, owned by root.
+The Builder CLI never writes secrets into `.env` and never passes them as environment variables to subprocesses. All secrets are written into files: the local environment keeps them in `secrets/` inside the repository, the container environment in
+`/var/lib/event-booking/secrets`, owned by root.
 
 Only `bootstrap_admin_password` is printed. Right after the bootstrap admin account is created the CLI offers to delete the file on the spot. Copy it, remove the file, log in and change the password.
 
@@ -320,6 +335,7 @@ Jobs are separated, so a failing one does not hide the others. Dependencies are 
   - access control, user validation and assistant logic.
   - end to end over HTTP against the containerised stack.
 - Refactor the service layer, where the code can be simplified and reduced.
+- Add database row lock timeout.
 - Automatic status transition to finished after the event ends.
 - A non-root user in the API container image.
 - Linter for shell scripts, once there is more than just the Docker entrypoint.
@@ -332,3 +348,4 @@ Jobs are separated, so a failing one does not hide the others. Dependencies are 
 
 ## 📄 License
 MIT. [LICENSE](LICENSE).
+

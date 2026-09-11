@@ -27,8 +27,8 @@ class PaginationParams(BaseModel):
 class Page[ITEM](BaseModel):
     """
     One page of results. Total counts every row in db matching the query,
-    not the rows returned, so the client can work out the number of pages
-    and render controls.
+    not the rows returned. The number of pages is calculated automatically
+    from the per_page query parameter.
     """
 
     items: list[ITEM]

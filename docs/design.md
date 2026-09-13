@@ -82,11 +82,10 @@ User[10] < Organizer[20] < Admin[30]
 Each registered account starts as a regular User, with basic functionality. The account role can be upgraded or downgraded by an Admin account. The role permissions are inherited, therefore a higher role also has the functionality of the lesser roles. Organizer keeps all User functionality and Admin has those of User and Organizer, plus its own.
 
 ### Role promotion policy
-Every account starts as a **User**. There is no separate registration for an organizer or admin account, and no endpoint that grants a role to its own caller. An account is promoted to **Organizer** or **Admin** only by an **Admin** account.
-The first admin is the exception: it is created on boot from configured credentials when the database holds no admin at all, which is what makes the first promotion possible.
+The role carried by the token is informational only. Every assistant re-reads it from the database, so a promotion or a demotion takes effect on the next request, without the account having to log in again.
 
-The role carried by the token is informational only. Every assistant re-reads it from the database, so a promotion or a demotion takes effect immediately on the next request, without the account having to log in again for a new token. It remains in this shape because this
-mechanic should rather be handled by token deactivation, and that should rather be performed on a Redis service, which is not implemented yet.
+The alternative would be to trust the token claims and deactivate the token whenever an operation changes account permissions, forcing a new login. That approach would require keeping a list of valid tokens in Redis, for speed reasons.
+Doing the same in Postgres would make no sense, since Redis holds its data in RAM and a token has to be confirmed on almost every request.
 
 ### User types and their privileges
 - **Visitor**: an unauthenticated caller, with no account and no access token. Browses published events and can register an account.

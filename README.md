@@ -234,8 +234,11 @@ Make sure that the repository is inside the Linux filesystem, e.g. `~/projects`.
 ## 🔧 Configuration
 Nothing has to be configured by hand. The `builder` CLI takes care of everything. More details in the [Builder CLI](#-builder-cli) section.
 
+- Application config: [`app/core/config.py`](app/core/config.py)
+- Builder environment config: [`builder/config/environments.py`](builder/config/environments.py)
+
 ## ▶️ Running the system
-Run the local or container environment. Keep in mind that only one environment can run at a time.
+Run the local or container environment. Keep in mind that only one environment can run at a time. Add `--seed` on the first run to fill the database with demo data, described in [Seed data](#seed-data).
 ```bash
 builder local up      # or: builder container up
 ```
@@ -254,6 +257,7 @@ A built-in CLI that starts and tears down the application, offering two environm
 |---|---|
 | builder local up | Start the environment, generate secrets when missing. Existing secrets and volumes are reused. Ends by replacing the terminal process with uvicorn. |
 | builder local up --no-api | The same, without starting the uvicorn server. Used mainly in CI. |
+| builder \<env\> up --seed | Also load the demo dataset. Applied only when no database volume exists, so data that is already there is never touched. |
 | builder container up | Start the full stack in containers. |
 | builder \<env\> down | Stop the environment. Nothing is removed unless a flag is given. |
 | builder \<env\> down --logs | Also remove the log directory. Irreversible. |
@@ -265,8 +269,16 @@ A built-in CLI that starts and tears down the application, offering two environm
 
 - `--data`: removes the volume and the secrets together on purpose. The secrets directory holds `postgres_password`, and that password only reaches Postgres while its data directory is being initialised, so a newly generated one would leave a
   database nothing can log into.
-- `rebuild-schema`: asks once, then removes the components of the local environment: volume, secrets, logs and every file in `alembic/versions`. It regenerates the initial revision from the db models, re-applies the static revision templates from
-  `builder/revisions` on top of it, and verifies the migrations in both directions with `alembic upgrade head` and `alembic downgrade base`.
+- `rebuild-schema`: asks once, then removes the components of the local environment: volume, secrets, logs and every file in [`alembic/versions`](alembic/versions). It regenerates the initial revision from the db models, re-applies the static revision templates from
+  [`builder/revisions`](builder/revisions) on top of it, and verifies the migrations in both directions with `alembic upgrade head` and `alembic downgrade base`.
+- `--seed`: streams [`builder/dataset/seed.sql`](builder/dataset/seed.sql) into `psql` inside the Postgres container, as a single transaction. The volume presence is checked before the containers start, so an existing database and existing data are never touched.
+  In order to run it, remove database volume first with: `builder <env> down --data`.
+
+### Seed data
+Data for tests and demonstration. It is raw SQL, so the dataset survives every refactor of the code and it is possible to bypass some API protections, like creating events in the past.
+
+Every value is structured and follows one pattern. The accounts are `user1`, `organizer1` and `admin1`, numbered upward, with their attributes and owned resources named accordingly.
+All share the same password `test`. The exception is the bootstrap `master_admin`, that is created on a freshly booted applcation. Its password is printed on boot and the CLI offers to delete the file right after.
 
 ### Environments
 The application has two configured environments, **local** and **container**.
@@ -277,13 +289,13 @@ Postgres server in a container, the API on the host with `uvicorn --reload`, so 
 Requires a `.env` file, which is regenerated on every `builder local up` from the local environment configuration.
 
 #### Container
-Everything in containers, the API started from the Dockerfile `CMD` without reload. Migrations and the bootstrap admin run from `docker-entrypoint.sh`. Does not use a `.env` file, since every variable is passed through the environment of the
+Everything in containers, the API started from the [Dockerfile](docker/Dockerfile) `CMD` without reload. Migrations and the bootstrap admin run from [`docker/docker-entrypoint.sh`](docker/docker-entrypoint.sh). Does not use a `.env` file, since every variable is passed through the environment of the
 subprocess that runs docker.
 
 > At the moment both **cannot run at the same time**, since both occupy the same host port 8000. `builder <environment> up` refuses to start when the other environment is already running.
 
 ### Environment configuration
-Configuration of the environments can be found here: `builder/config/environments.py`.
+Configuration of the environments can be found here: [`builder/config/environments.py`](builder/config/environments.py).
 
 ### Secrets
 The three secret files are created on `builder <env> up` once and then reused, unless removed.
@@ -303,7 +315,7 @@ builder local files
 pytest tests/unit
 ```
 
-`tests/unit` needs no database and no running application. It currently only tests whether any endpoint method and path pair is repeated, which FastAPI never reports on its own. Routing silently answers with the first one.
+[`tests/unit`](tests/unit) needs no database and no running application. It currently only tests whether any endpoint method and path pair is repeated, which FastAPI never reports on its own. Routing silently answers with the first one.
 
 ## 🤖 CI
 Three jobs run on every push to `main` and `dev`, and on every pull request to `main`:
@@ -314,14 +326,14 @@ Three jobs run on every push to `main` and `dev`, and on every pull request to `
 | lint | `ruff check` and `ruff format --check` |
 | types | `mypy` |
 
-Jobs are separated, so a failing one does not hide the others. Dependencies are installed from `requirements/requirements-dev.lock`, so a new release of some tool or framework will not turn the build red.
+Jobs are separated, so a failing one does not hide the others. Dependencies are installed from [`requirements/requirements-dev.lock`](requirements/requirements-dev.lock), so a new release of some tool or framework will not turn the build red.
 
 ## 🪝 Git hooks
 A `pre-commit` hook runs the linter, the formatter check and the type checker before every commit.
 
 The tests are skipped here, since they may take a while to run once there are more of them. Tests run in CI.
 
-The hook is located in `.githooks/pre-commit` instead of `.git/hooks/`, so it stays in the repository. 
+The hook is located in [`.githooks/pre-commit`](.githooks/pre-commit) instead of `.git/hooks/`, so it stays in the repository. 
 
 This hook does not work until git is pointed at it. Enable it with:
 ```bash
@@ -339,7 +351,6 @@ Hooks can be skipped with `git commit --no-verify`.
 - Admins cannot block accounts and cannot moderate events.
 - Containers run as the root user.
 - Old data is never removed.
-- The API container has no healthcheck.
 
 ## 🛣️ Roadmap
 ### 📝 Planned
@@ -356,6 +367,7 @@ Hooks can be skipped with `git commit --no-verify`.
 - Linter for shell scripts, once there is more than just the Docker entrypoint.
 - Secret rotation.
 - Publish the image on Docker Hub, once the project grows bigger.
+- Stop validating tokens with Postgres. Build the token lifecycle mechanics together with Redis container.
 
 ## 👤 Author contact
 - GitHub: https://github.com/Glover012

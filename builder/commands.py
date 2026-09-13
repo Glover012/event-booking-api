@@ -8,7 +8,7 @@ from .config import (
     REPOSITORY_DIR,
     Environment,
 )
-from .helpers import api, env_file, secrets
+from .helpers import api, env_file, secrets, seed
 from .helpers.console import bold, confirm, cyan, green, red, state
 from .helpers.filesystem import remove_directory
 from .helpers.revisions import copy_static
@@ -31,6 +31,10 @@ def up(args: argparse.Namespace) -> None:
 
     Writes .env since API read from it.
 
+    With --seed the demo dataset is loaded, but only when no database volume
+    of selected enviornment is present. Must run: builder <env> down --data
+    first. Created in this shape to make data removal an explicit decision.
+
     With --no-api uvicorn isn't started and admin password isn't printed.
     """
     environment: Environment = args.environment
@@ -45,20 +49,33 @@ def up(args: argparse.Namespace) -> None:
         print(bold("Run builder down first."))
         return
 
+    # Read before compose up, since compose creates the volumes itself if none are present.
+    # A volume that is already present holds the data and the 'up --seed' must not touch it.
+    volume = volumes(environment)
+
     if environment is LOCAL:
         env_file.write(environment)
 
     secrets.create(environment)
 
+    # With --wait exit code is returned when healthcheck for every service is passed.
     compose(environment, "up", "-d", "--build", "--wait")
+
+    # Local run only. The container environment runs both cmds in its entrypoint
+    if environment is LOCAL:
+        run(["alembic", "upgrade", "head"])
+        run(["python", "-m", "app.cli", "create-bootstrap-admin"])
+
+    if args.seed:
+        if not volume:
+            seed.apply(environment)
+        else:
+            print(bold("The database volume already exists, nothing was seeded."))
+            print(f"Run {cyan(f'builder {environment.NAME} down --data')} first.")
 
     if environment is CONTAINER:
         secrets.print_bootstrap_password(environment)
         return
-
-    # Local run only. The container environment runs both cmds in its entrypoint
-    run(["alembic", "upgrade", "head"])
-    run(["python", "-m", "app.cli", "create-bootstrap-admin"])
 
     # Returns before the password print, so CI don't need to react on input()
     if environment is LOCAL and args.no_api:

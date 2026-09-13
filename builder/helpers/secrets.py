@@ -2,6 +2,7 @@ import secrets
 from pathlib import Path
 
 from ..config import BOOTSTRAP_PASSWORD, SECRET_NAMES, Environment
+from ..system import volumes
 from . import filesystem
 from .console import bold, green, red, yellow
 
@@ -10,13 +11,21 @@ def create(environment: Environment) -> None:
     """
     Creates the secret directory and any missing secret inside it.
 
-    Existing secrets are never overwritten, since POSTGRES_PASSWORD only
+    All existing secrets are never overwritten, since POSTGRES_PASSWORD only
     reaches Postgres while being initialised, so a new one would not match
     a volume that already exists.
+
+    bootstrap_admin_password creation is skipped when the database volume is
+    already present. That account is created only once, therefore if password file
+    is not present and volume exists, it means admin is already there.
     """
     filesystem.create_directory(environment, environment.SECRET_DIR)
+    database_exists = bool(volumes(environment))
 
     for name in SECRET_NAMES:
+        if name == BOOTSTRAP_PASSWORD and database_exists:
+            continue
+
         if exists(environment, name):
             print(f"{green(name)} already exists and will be used.")
             continue

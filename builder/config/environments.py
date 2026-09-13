@@ -34,6 +34,8 @@ CONTAINER = Environment(
         ("POSTGRES_HOST", "postgres"),
         ("BOOTSTRAP_ADMIN_USERNAME", "master_admin"),
         ("BOOTSTRAP_ADMIN_EMAIL", "admin@example.com"),
+        ("BOOTSTRAP_ADMIN_FIRST_NAME", "System"),
+        ("BOOTSTRAP_ADMIN_LAST_NAME", "Administrator"),
     ),
 )
 
@@ -52,6 +54,8 @@ LOCAL = Environment(
         ("POSTGRES_HOST", "localhost"),
         ("BOOTSTRAP_ADMIN_USERNAME", "master_admin"),
         ("BOOTSTRAP_ADMIN_EMAIL", "admin@example.com"),
+        ("BOOTSTRAP_ADMIN_FIRST_NAME", "System"),
+        ("BOOTSTRAP_ADMIN_LAST_NAME", "Administrator"),
     ),
 )
 

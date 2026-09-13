@@ -16,14 +16,10 @@ logger = logging.getLogger(__name__)
 class CreateBootstrapAdmin:
     """
     Creates the initial admin account on application boot.
-    Runs only when the database contains no admin. The password may
-    be read from a file or enviornment variable. For deployment, file
-    solution must be taken. Enviornment variable in .env have priority and can
-    be used only for CI/CD and local development.
+    Runs only when the database contains no admin. The password
+    is read from a file.
 
-        Password read priorty: enviornment > file
-
-    > After succesfull deployment, password_file must be removed from
+    > After successful deployment, password_file must be removed from
     a host machine.
     """
 
@@ -69,20 +65,21 @@ class CreateBootstrapAdmin:
 
     def credentials_configured(self) -> bool:
         """
-        Confirms that admin credentials were provided in .env.
-        Names are skipped, due to defaults. The password is checked
-        separately, since it has its own two sources.
+        Confirms that admin credentials were provided in .env or
+        as env variables.
         """
         return all(
             [
                 settings.BOOTSTRAP_ADMIN_USERNAME,
                 settings.BOOTSTRAP_ADMIN_EMAIL,
+                settings.BOOTSTRAP_ADMIN_FIRST_NAME,
+                settings.BOOTSTRAP_ADMIN_LAST_NAME,
             ]
         )
 
     def read_password(self) -> SecretStr:
         """
-        Reads the password from the environment or SECRET_DIR.
+        Reads the password from the SECRET_DIR.
 
         Executed only when the database has no admin present.
         """
@@ -91,8 +88,7 @@ class CreateBootstrapAdmin:
         except SecretNotFound as e:
             raise SystemExit(
                 f"No admin account found in the database and no bootstrap "
-                f"password available ({e}). Set BOOTSTRAP_ADMIN_PASSWORD or "
-                f"run setup.sh to generate the secret file."
+                f"password available ({e}). Run `builder <env> up` again."
             )
 
     def create_admin(self, password: SecretStr) -> Users:

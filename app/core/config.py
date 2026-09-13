@@ -1,106 +1,57 @@
 from functools import cached_property
 from urllib.parse import quote
 
-from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .secret_files import Secrets
 
 
 class Settings(BaseSettings):
-    ### App details ###
-    APP_NAME: str = "event-booking-api"
-    APP_VERSION: str = "0.1.0"
-    ENVIRONMENT: str
+    """
+    Every setting of the application, resolved once while this module is
+    imported.
 
-    ### Database credentials ###
+    The fields without a default carry no value of their own. They arrive from
+    the enviornment the builder prepared - .env in the local enviornment, plain
+    enviornment variables in the container one - and the values themselves live
+    in builder/config/environments.py. A missing variable either from .env or
+    enviornment stops the import.
+
+    The defaults that remain describe the application itself and are the same
+    in every enviornment.
+
+    Secrets never travel through .env nor a command line. They are read from
+    the files in SECRET_DIR, which the builder writes and docker compose bind
+    mounts into the containers.
+    """
+
+    ### Provided by the builder enviornment configuration ###
+    ENVIRONMENT: str
+    ## Dirs
+    SECRET_DIR: str
+    LOG_DIR: str
+    ## Database
     POSTGRES_USER: str
     POSTGRES_DB: str
     POSTGRES_HOST: str
-    POSTGRES_PORT: int = 5432
+    ## Bootstrap admin
+    BOOTSTRAP_ADMIN_USERNAME: str
+    BOOTSTRAP_ADMIN_EMAIL: str
+    BOOTSTRAP_ADMIN_FIRST_NAME: str
+    BOOTSTRAP_ADMIN_LAST_NAME: str
 
-    ### Bootstrap Admin ###
-    BOOTSTRAP_ADMIN_USERNAME: str | None = None
-    BOOTSTRAP_ADMIN_EMAIL: str | None = None
-    BOOTSTRAP_ADMIN_FIRST_NAME: str = "System"
-    BOOTSTRAP_ADMIN_LAST_NAME: str = "Administrator"
+    ### App details ###
+    APP_NAME: str = "event-booking-api"
+    APP_VERSION: str = "0.1.0"
+
+    ### Database ###
+    POSTGRES_PORT: int = 5432
 
     ### Security ###
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    ### Secrets ###
-    # Duplicated literally in docker-compose.yaml (bind mount) and setup.sh.
-    # Changing it only here makes read_secret raise SecretNotFound.
-    SECRET_DIR: str = "/var/lib/event-booking/secrets"
-
-    # Each secret is resolved in the order: enviornment > file
-    # The enviornment variable set in .env will always win.
-
-    # DOCKER INFO
-    # docker-compose don't load these secrets from .env, it only
-    # takes into account the bind-mounted files, therefore
-    # it is possible to use secrets in .env locally, while
-    # containers are using only the files.
-
-    # *_ENV fields have validation_alias equal to its @cached_property
-    # Code uses only @cached_properties directly. Pydantic when Settings()
-    # is constructed during import, tries to load values from .env,
-    # into *_ENV variables, by their valiadation_alias. If value is absent,
-    # leaves None, so the @cached_property look for file to read.
-
-    SECRET_KEY_ENV: SecretStr | None = Field(
-        default=None, validation_alias="SECRET_KEY"
-    )
-
-    POSTGRES_PASSWORD_ENV: SecretStr | None = Field(
-        default=None, validation_alias="POSTGRES_PASSWORD"
-    )
-
-    BOOTSTRAP_ADMIN_PASSWORD_ENV: SecretStr | None = Field(
-        default=None, validation_alias="BOOTSTRAP_ADMIN_PASSWORD"
-    )
-
-    def _resolve(self, filename: str, env_value: SecretStr | None) -> str:
-        """
-        Returns a single secret, preferring the environment over the file
-        in SECRET_DIR. Raises SecretNotFound when neither source provides it.
-        """
-        if env_value is not None:
-            return env_value.get_secret_value()
-
-        return Secrets.read_secret(filename, self.SECRET_DIR).get_secret_value()
-
-    @cached_property
-    def BOOTSTRAP_ADMIN_PASSWORD(self) -> str:
-        return self._resolve(
-            "bootstrap_admin_password", self.BOOTSTRAP_ADMIN_PASSWORD_ENV
-        )
-
-    @cached_property
-    def SECRET_KEY(self) -> str:
-        return self._resolve("secret_key", self.SECRET_KEY_ENV)
-
-    @cached_property
-    def POSTGRES_PASSWORD(self) -> str:
-        return self._resolve("postgres_password", self.POSTGRES_PASSWORD_ENV)
-
-    ### Database connection ###
-    # quote safe='' protects manually typed password which may contain
-    # characters like @ or /, that alter URL structure it percent-encodes
-    # them to their respective hexadecimal form like: @ -> %40
-    # SQLAlchemy calls unquote while parsing URL, so it revieve original
-    # password
-    @cached_property
-    def DATABASE_URL(self) -> str:
-        return (
-            f"postgresql+psycopg://{self.POSTGRES_USER}:"
-            f"{quote(self.POSTGRES_PASSWORD, safe='')}@{self.POSTGRES_HOST}:"
-            f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
-        )
-
     ### Logging ###
-    LOG_DIR: str = "/var/log/event-booking"
     LOG_LEVEL_CONSOLE: str = "info"
     LOG_MAX_BYTES: int = 2 * 1024 * 1024
     LOG_BACKUP_COUNT: int = 10
@@ -111,6 +62,41 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    ### Secrets ###
+    def _secret(self, filename: str) -> str:
+        """
+        Returns one secret from SECRET_DIR. Raises SecretNotFound when that
+        file is not there.
+        """
+        return Secrets.read_secret(filename, self.SECRET_DIR).get_secret_value()
+
+    # Password is only read once, therefore not cached
+    @property
+    def BOOTSTRAP_ADMIN_PASSWORD(self) -> str:
+        return self._secret("bootstrap_admin_password")
+
+    @cached_property
+    def SECRET_KEY(self) -> str:
+        return self._secret("secret_key")
+
+    @cached_property
+    def POSTGRES_PASSWORD(self) -> str:
+        return self._secret("postgres_password")
+
+    ### Database connection ###
+    # quote safe='' protects manually typed password which may contain
+    # characters like @ or /, that alter URL structure it percent-encodes
+    # them to their respective hexadecimal form like: @ -> %40
+    # SQLAlchemy calls unquote while parsing URL, so it receives original
+    # password
+    @cached_property
+    def DATABASE_URL(self) -> str:
+        return (
+            f"postgresql+psycopg://{self.POSTGRES_USER}:"
+            f"{quote(self.POSTGRES_PASSWORD, safe='')}@{self.POSTGRES_HOST}:"
+            f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
 
 
 settings = Settings()

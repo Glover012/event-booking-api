@@ -33,6 +33,8 @@ services:
       POSTGRES_HOST: ${POSTGRES_HOST}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
+      BOOTSTRAP_ADMIN_FIRST_NAME: ${BOOTSTRAP_ADMIN_FIRST_NAME}
+      BOOTSTRAP_ADMIN_LAST_NAME: ${BOOTSTRAP_ADMIN_LAST_NAME}
       SECRET_DIR: ${SECRET_DIR}
       LOG_DIR: ${LOG_DIR}
       TZ: UTC
@@ -44,6 +46,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
 
 volumes:
   event-booking-db:

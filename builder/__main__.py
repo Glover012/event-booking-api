@@ -59,6 +59,15 @@ def _add_environment(subparsers, environment: Environment) -> None:
         ),
     )
 
+    up_parser.add_argument(
+        "--seed",
+        action="store_true",
+        help=(
+            "Load the demo dataset from builder/dataset/seed.sql. Applied only when "
+            "no database volume is already present, otherwise seed is skipped."
+        ),
+    )
+
     # Stuff dedicated for local enviornment only
     if environment is LOCAL:
         up_parser.add_argument(

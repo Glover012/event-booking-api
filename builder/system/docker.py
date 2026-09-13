@@ -27,6 +27,7 @@ def compose(
     environment: Environment,
     *arguments: str,
     capture: bool = False,
+    input: str | None = None,
 ) -> str:
     """
     Runs a docker compose command, along with additional arguments.
@@ -48,6 +49,7 @@ def compose(
             *arguments,
         ],
         capture=capture,
+        input=input,
         # os.environ returns enviornmental variables inherited by this process
         # env= replaces the environment instead of adding to it, so
         # passing variables(environment) alone would leave the command

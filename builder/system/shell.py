@@ -15,6 +15,7 @@ def run(
     command: list[str],
     capture: bool = False,
     env: dict[str, str] | None = None,
+    input: str | None = None,
 ) -> str:
     """
     Runs a command as the current user.
@@ -23,9 +24,17 @@ def run(
 
     env replaces the process environment for the child, which is how compose
     receives its values without depending on a .env file availability.
+
+    input is streamed to the stdin of the command as a pipe.
+    Used with `up --seed`, this is how `psql` receives the seed file content.
     """
     result = subprocess.run(
-        command, text=True, capture_output=capture, env=env, check=False
+        command,
+        text=True,
+        capture_output=capture,
+        env=env,
+        input=input,
+        check=False,
     )
 
     if result.returncode != 0:

@@ -14,6 +14,7 @@ A backend system for publishing, booking and maintaining events, based on REST A
 - [📘 About the project](#-about-the-project)
 - [✨ Features](#-features)
 - [🎯 Design objectives](#-design-objectives)
+- [🎬 Demo](#-demo)
 - [📐 Design notes](#-design-notes)
 - [📑 API endpoints overview](#-api-endpoints-overview)
 - [📦 API response structure](#-api-response-structure)
@@ -59,8 +60,8 @@ and response validation, and protection against overbooking. It ships with a Bui
 - Row locking that prevents an event from being oversold
 - One active booking per user and event, enforced by an index
 - PostgreSQL database with constraints, indexes and triggers
-- Custom SQLAlchemy column type that refuses anything but a hashed password, on write and on read. 
-  Moreover this mechanic can be easly implemented for different columns, in order to protect sensitive data.
+- Custom SQLAlchemy column type that refuses anything but a hashed password, on write and on read.
+  Moreover this mechanism can be easily implemented for different columns, in order to protect sensitive data.
 - Application works explicitly on UTC time
 
 ### Application environment
@@ -77,7 +78,10 @@ and response validation, and protection against overbooking. It ships with a Bui
 - Keep detailed docstrings and comments, since the project is educational.
 - Protect sensitive data: keep it out of logs, responses and the command line.
 - Answer with one response shape everywhere, so a client always parses a single structure.
-- Implement the data safeguards PostgreSQL provides(in progress)
+- Implement the data safeguards PostgreSQL provides (in progress).
+
+## 🎬 Demo
+![Demo](docs/demo.gif)
 
 ## 📐 Design notes
 The detailed design description, including the diagrams, is kept in a separate document, because it is too much for a README. [Design notes](docs/design.md).
@@ -137,7 +141,7 @@ The OAuth2 token endpoint and the healthcheck are the two exceptions.
 ```
 
 ### Paginated
-The `data` field carries page info along with the total row count, so a client can easy calculate the total amount of pages.
+The `data` field carries the current page, number of pages and the total row count. The API client receives all the data without calculating anything.
 
 ```json
 {
@@ -164,12 +168,22 @@ The `data` field carries page info along with the total row count, so a client c
 }
 ```
 
-### Error
+### Fail - 4xx
 ```json
 {
   "status": "fail",
   "code": "HTTP_ERROR",
   "message": "Not Found",
+  "data": null
+}
+```
+
+### Error - 5xx
+```json
+{
+  "status": "error",
+  "code": "INTERNAL_SERVER_ERROR",
+  "message": "Internal server error.",
   "data": null
 }
 ```
@@ -193,7 +207,8 @@ event-booking-api/
 │   ├── config/             Configuration data: environments, paths, revision order, secret names
 │   ├── helpers/            Functions for filesystem operations, revisions, secrets and the rest
 │   ├── system/             Subprocesses and docker, with output streamed to the terminal
-│   └── revisions/          Hand-written static revision templates, applied by `rebuild-schema`
+│   ├── revisions/          Hand-written static revision templates, applied by `rebuild-schema`
+│   └── dataset/            Dataset for demonstration and testing
 ├── alembic/                Database migrations
 ├── docker/                 Dockerfile, compose files, entrypoint
 ├── requirements/           Dependency files and their respective locks
@@ -202,14 +217,18 @@ event-booking-api/
 ```
 
 ## 📌 Project status
-**MVP, version 0.1.0.** The complete loop works end to end: register, log in, create an event, publish it, book a ticket, cancel booking, cancel the event.
+**MVP, version 0.1.0.** The complete loop works end to end: register, log in, create an event, publish it, book a ticket, cancel the booking, cancel the event.
 
 25 endpoints, static analysis and continuous integration are set up. The test suite along with additional features and fixes is in development.
+
+> Developed and tested on Ubuntu 26.04 under WSL2, with Docker Engine installed inside the distribution.
 
 ## 📋 Requirements
 - Python 3.14+
 - Linux or WSL2
-- Docker with the Compose plugin
+- Docker Engine with the Compose plugin
+
+> Docker Desktop was not used, therefore it is unsupported here.
 
 ## ⚙️ Installation
 ```bash
@@ -230,6 +249,13 @@ pip install -e . -r requirements/requirements-dev.lock
 
 ### WSL2
 Make sure that the repository is inside the Linux filesystem, e.g. `~/projects`. Avoid `/mnt/c` or any other Windows path.
+
+Install WSL2 by following [Microsoft's guide](https://learn.microsoft.com/windows/wsl/install). The **Ubuntu 26.04** distribution already ships Python 3.14 and git, so Docker Engine is the only thing left to install.
+
+#### Docker Engine installation
+- Follow [Docker's guide](https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository).
+- Then add your account to the `docker` group, as the [post-installation guide](https://docs.docker.com/engine/install/linux-postinstall#add-your-user-to-the-docker-group) describes. The local environment relies on it, since it is the one that
+  needs no sudo at all.
 
 ## 🔧 Configuration
 Nothing has to be configured by hand. The `builder` CLI takes care of everything. More details in the [Builder CLI](#-builder-cli) section.
@@ -272,13 +298,13 @@ A built-in CLI that starts and tears down the application, offering two environm
 - `rebuild-schema`: asks once, then removes the components of the local environment: volume, secrets, logs and every file in [`alembic/versions`](alembic/versions). It regenerates the initial revision from the db models, re-applies the static revision templates from
   [`builder/revisions`](builder/revisions) on top of it, and verifies the migrations in both directions with `alembic upgrade head` and `alembic downgrade base`.
 - `--seed`: streams [`builder/dataset/seed.sql`](builder/dataset/seed.sql) into `psql` inside the Postgres container, as a single transaction. The volume presence is checked before the containers start, so an existing database and existing data are never touched.
-  In order to run it, remove database volume first with: `builder <env> down --data`.
+  In order to run it, remove the database volume first with: `builder <env> down --data`.
 
 ### Seed data
 Data for tests and demonstration. It is raw SQL, so the dataset survives every refactor of the code and it is possible to bypass some API protections, like creating events in the past.
 
 Every value is structured and follows one pattern. The accounts are `user1`, `organizer1` and `admin1`, numbered upward, with their attributes and owned resources named accordingly.
-All share the same password `test`. The exception is the bootstrap `master_admin`, that is created on a freshly booted applcation. Its password is printed on boot and the CLI offers to delete the file right after.
+All share the same password `test`. The exception is the bootstrap `master_admin`, which is created on application boot when the database holds no admin. Its password is then printed and the CLI offers to delete the file right after.
 
 ### Environments
 The application has two configured environments, **local** and **container**.
@@ -333,7 +359,7 @@ A `pre-commit` hook runs the linter, the formatter check and the type checker be
 
 The tests are skipped here, since they may take a while to run once there are more of them. Tests run in CI.
 
-The hook is located in [`.githooks/pre-commit`](.githooks/pre-commit) instead of `.git/hooks/`, so it stays in the repository. 
+The hook is located in [`.githooks/pre-commit`](.githooks/pre-commit) instead of `.git/hooks/`, so it stays in the repository.
 
 This hook does not work until git is pointed at it. Enable it with:
 ```bash

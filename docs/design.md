@@ -43,15 +43,15 @@ The detailed application design description.
 ### API structure
 **routers -> endpoints -> schemas -> dependencies -> assistants -> services**
 
-- **Routers**: Each router contains **Endpoints** grouped by a role, that can access them.
-- **Endpoints**: The endpoints use **Dependencies** to load features and required **Assistant** specified for a particular role that can access endpoint. Endpoint request and response body are covered by designated **Schemas**.
-- **Schemas**: Request forms, response data validation and SQLAlchemy model filtration. Models that are returned from database are filtered by their designated ResponseModel, so any unnecessary data won't reach the client. Each response has a special ApiResponse wrapper that is used to achieve unified response structure for the API client.
-- **Dependencies**: Used to load the tools and features that endpoint requires, like Assistant classes or Pagination feature.
+- **Routers**: Each router contains **Endpoints** grouped by a role that can access them.
+- **Endpoints**: The endpoints use **Dependencies** to load features and required **Assistant** specified for a particular role that can access the endpoint. Endpoint request and response body are covered by designated **Schemas**.
+- **Schemas**: Request forms, response data validation and SQLAlchemy model filtration. Models that are returned from the database are filtered by their designated ResponseModel, so any unnecessary data won't reach the client. Each response has a special ApiResponse wrapper that is used to achieve unified response structure for the API client.
+- **Dependencies**: Used to load the tools and features that an endpoint requires, like Assistant classes or Pagination feature.
 - **Assistants**: Each assistant covers user role functions. It ships the whole endpoint logic, verifies user access and token data.
 - **Services**: Functions responsible only for database communication. Used only by assistants, never inside an endpoint, since these tools aren't responsible for access control. Services commit the data and raise database errors.
 
 ### Assistant classes and access control
-The API endpoint access control is role-based and all of that resides within assistant classes. Each router is grouped by a role that can access the endpoints inside, and each of them, via a dependency, imports its designated assistant, which controls access and confirms the user data extracted from the JWT with the database. Assistant classes also include services, that allow them to communicate with the database and perform operations on data.
+The API endpoint access control is role-based and all of that resides within assistant classes. Each router is grouped by a role that can access the endpoints inside, and each of them, via a dependency, imports its designated assistant, which controls access and confirms the user data extracted from the JWT with the database. Assistant classes also include services that allow them to communicate with the database and perform operations on data.
 
 We have 5 types of assistants:
 - **AuthAssistant**: for non-authorized users, only authorization.
@@ -60,8 +60,8 @@ We have 5 types of assistants:
 - **OrganizerAssistant**: for event organizer accounts, covers all event related functions. Includes all *UserAssistant* features.
 - **AdminAssistant**: application maintaining account, admin features. Includes all *UserAssistant* and *OrganizerAssistant* features.
 
-The assistants form a chain rather than four separate classes. `UserAssistant` is the root, because every account is a user. `OrganizerAssistant` inherits from User and `AdminAssistant` inherits from Organizer. A higher role reaching a lower role's route is therefore
-achieved through method inheritance. The `MINIMUM_ROLE` check on the route decides whether to establish access or not.
+The role assistants form a chain rather than three separate classes. `UserAssistant` is the root, because every account is a user. `OrganizerAssistant` inherits from User and `AdminAssistant` inherits from Organizer.
+A higher role reaching a lower role's route is therefore achieved through method inheritance. The `MINIMUM_ROLE` check on the route decides whether to establish access or not.
 
 The root `UserAssistant` class takes also every database service, so the subclasses need no constructor of their own. `PublicAssistant` and `AuthAssistant` stay outside the chain, since neither has an authenticated caller to verify.
 
@@ -72,13 +72,14 @@ Access to an API route and to a database resource is determined by two independe
 An account, once promoted to a higher role, does not lose its previous privileges. Instead it inherits them, therefore its access can only widen.
 
 ### Ownership control
-At first, the designated assistant class extracts user data from the JWT and confirms it with the database. This is made deliberately in this shape to avoid a situation when a user role is downgraded, since a JWT has a 30 minute expiration time (configurable).
+At first, the designated assistant class extracts user data from the JWT and confirms it with the database. This is deliberate in this shape to avoid a situation when a user role is downgraded, since a JWT has a 30 minute expiration time (configurable).
 
-Then using verified User ID and role, ownership on database resources is checked using ORM. Any attempt to access somebody else's or non-existent data ends up with the same 404 error. Therefore it is not possible to check data presence.
+Then using verified User ID and role, ownership on database resources is checked using ORM. Any attempt to access somebody else's or non-existent data ends up with the same 404 error. Therefore presence of data isn't revealed.
 
 ## Roles, user types and privileges
 ### Roles
 User[10] < Organizer[20] < Admin[30]
+
 Each registered account starts as a regular User, with basic functionality. The account role can be upgraded or downgraded by an Admin account. The role permissions are inherited, therefore a higher role also has the functionality of the lesser roles. Organizer keeps all User functionality and Admin has those of User and Organizer, plus its own.
 
 ### Role promotion policy
@@ -110,17 +111,25 @@ Five statuses, kept in the column by the `ck_events_status` constraint, so other
 `draft` and `locked` are the two that carry no meaning to a client on their own: a draft is invisible, and a locked event looks exactly like an active one except that booking is refused.
 
 ### Event status policy
-Allowed event status transitions: draft → active → locked → active → finished
+Allowed event status transitions:
+- draft -> active
+- active -> locked / finished
+- locked -> active
+- finished -> none
+- cancelled -> none
 
-Publishing can only be performed on an active event, never a draft. It cannot be reversed: withdrawing an event can be done by cancelling it. Cancellation is reached through a dedicated endpoint, since besides the status change, it also cancels the current bookings.
+Publishing can only be performed on an active event, never a draft. It cannot be reversed: withdrawing an event can be done by cancelling it. Cancellation is reached through a dedicated endpoint,
+since besides the status change, it also cancels the current bookings.
 
 Publishing is also guarded by the database itself. The `ck_events_draft_not_public` constraint makes a public draft impossible.
 
 ### Event row lock
-Operations on events are critical, therefore to avoid dozens of errors, a row lock is implemented. Every operation that touches a particular event row locks it first using SELECT ... FOR UPDATE. Therefore operations like changing an event status or booking are queued with any other that touches the same event.
+Operations on events are critical and several of them can collide on the same row: booking, editing, a status change and cancelling. A row lock keeps them from hitting each other.
+Every operation that touches a particular event row locks it first using SELECT ... FOR UPDATE. Therefore operations like changing an event status or booking are queued with any
+other that touches the same event.
 
 ### One active booking per user and event
-A database index with unique(user_id, event_id) protects from booking the same event twice. Booking cancellation drops the row out of the index, so the same user can book that event again.
+The database holds a partial unique index on (user_id, event_id) WHERE status = 'confirmed', so the same event cannot be booked twice. Booking cancellation drops the row out of the index, so the same user can book that event again.
 
 ### Cancelling an event cancels its bookings
 This is the main reason why cancelling an event has a separate endpoint, instead of being covered by the status change. Both the event and all confirmed bookings on that event are cancelled in one transaction, since an error could leave confirmed bookings on a cancelled event, or the other way round.
@@ -139,9 +148,9 @@ A booking is accepted only when every one of these holds. All of them are checke
 - The tickets aren't sold out. The amount of confirmed tickets plus the amount the user requested does not exceed the event capacity.
 - The caller has no active booking on that event yet.
 
-The requested amount is validated before booking, at the schema: between 1 and 10 tickets per booking.
+The requested amount is validated before booking, in the schema: between 1 and 10 tickets per booking.
 
-Cancelling changes the booking status and nothing else. The tickets return to the available pool by themselves, because only confirmed rows are counted while booking. There is no counter in database.
+Cancelling changes the booking status and nothing else. The tickets return to the available pool by themselves, because only confirmed rows are counted while booking. There is no counter in the database.
 
 Cancelled bookings are kept and still appear in the caller's own booking listing, so an account keeps its full reservation history.
 
@@ -154,7 +163,7 @@ Capacity may be lowered, but never below the tickets already sold. The limit is 
 
 Dates are frozen once someone holds a ticket. Editing them would hand the attendee a ticket for a date they never agreed to, and there is nothing to notify them with yet.
 
-Moving the event to `locked` is not required before an edit, but it is the option a front end should offer alongside one, especially while lowering the capacity.
+Moving the event to `locked` status is not required before an edit, but it is the option a front end should offer to the organizer, especially while lowering the capacity.
 
 ## API
 ### Pagination
@@ -216,7 +225,7 @@ def get_me_info(
 ```
 Note what `data=me_model` passes: a SQLAlchemy model, not a `UserResponse`. Pydantic `UserResponse` schema then converts it through `from_attributes` while building the envelope, and the schema decides which columns survive that conversion.
 
-A listing nests one generic param inside the other: `data` holds a `Page`, the page holds the items, the amount of pages and total row count.
+A listing nests one generic param inside the other: `data` holds a `Page`, the page holds the items, the number of pages and total row count.
 ```python
 @user_router.get(
     "/me/bookings",
@@ -235,7 +244,8 @@ def list_me_bookings(
         data=page,
     )
 ```
-The only additions are `pagination_dependency`, which reads the page and per_page(item amount per page) from the query string. The assistant method takes pagination parameters and returns a ready `Page`.
+
+The only additions are `pagination_dependency`, which reads the page and per_page (items per page) from the query string. The assistant method takes pagination parameters and returns a ready `Page`.
 
 The parameter varies between endpoints, examples:
 | Parametrisation | Used for |
@@ -254,7 +264,7 @@ USER_ALREADY_EXISTS = ApiInfoItem(
 )
 ```
 
-The same items feed both paths: a router passes the info to `ApiResponse.success`(fail or error) and `HTTPErrorItem` holds one as its `INFO`. The vocabulary of infos that a client sees lives in a single file.
+The same items serve both paths: a router passes the info to `ApiResponse.success` (fail or error) and `HTTPErrorItem` holds one as its `INFO`. The vocabulary of infos that a client sees lives in a single file.
 The item is a frozen dataclass with `slots=True`, so a code and its message cannot be changed at runtime and no attribute can be added, even by accident.
 
 ### Exception handlers
@@ -292,16 +302,17 @@ raise HTTPError.INVALID_STATUS_TRANSITION(
 ### Hashed password leak protection and custom HashedPassword ORM defined column type
 A custom SQLAlchemy column type refuses anything but a hash on write and rebuilds it as a `HashedPassword` class on read. A plaintext row inserted by raw SQL will fail on the first read.
 
-The password value travels between the functions as `HashedPassword`, a subclass of Pydantic's `SecretStr`, so it masks itself in e.g. `__repr__` and inside log files. It is only unwrapped where the exact content is needed.
+The password value travels between the functions as `HashedPassword`, a subclass of Pydantic's `SecretStr`, so it masks itself in, for example, `__repr__`, `__str__` and log files. It is only unwrapped where the exact content is needed.
 
 The `HashedPassword` constructor raises `ValueError` for anything the `PasswordHasher` class does not recognise as its own output. Therefore the class never contains a value that wasn't previously hashed with a known set of algorithms.
 
 ### UTC everywhere
-The database, the containers and the tokens all operate exclusively on UTC and the application itself converts no timezones. Time conversion is left for an API client. All date fields in request models are of `AwareDatetime`, therefore require an additional time shift to be provided. Naive datetime objects raise an error, since the database server would interpret a naive datetime as UTC, which would actually corrupt the data logic.
+The database, the containers and the tokens all operate exclusively on UTC and the application itself converts no timezones. Time conversion is left for an API client. All date fields in request models are of `AwareDatetime`, therefore require an explicit UTC offset to be provided. Naive datetime objects raise an error, since the database server would interpret a naive datetime as UTC, which would actually corrupt the data logic.
 
 ## Custom application tooling
 ### API internal CLI - `python -m app.cli`
-That CLI is one of the application components and resides in `app/cli.py`. It currently holds one command, `create-bootstrap-admin`, which creates the first admin on boot, when the database has none and does nothing when one exists.
+That CLI is one of the application components and resides in `app/cli.py`. It currently holds one command, `create-bootstrap-admin`, which creates the first admin on boot when the database has none
+and does nothing when one exists.
 
 It reuses the db models, the settings and a session. The container entrypoint and `builder local up` both call it after the migrations.
 
@@ -326,7 +337,7 @@ Simplified description of application mechanics, represented in diagrams.
 flowchart LR
     routers --> schemas --> dependencies --> assistants --> services --> db[(db)]
 
-    routers -.-> R["Contains endpoints, grouped by the MINIMUM_ROLE that can access endpoint.<br/>Wraps every answer in ApiResponse.<br/><b>Imports:</b> dependencies, schemas, api"]
+    routers -.-> R["Contains endpoints, grouped by the MINIMUM_ROLE that can access the endpoint.<br/>Wraps every answer in ApiResponse.<br/><b>Imports:</b> dependencies, schemas, api"]
     schemas -.-> S["Covers request forms, response validation and filters ORM models.<br/><b>Imports:</b> nothing from the application"]
     dependencies -.-> D["Loads the assistant and the features an endpoint requires, like pagination.<br/><b>Imports:</b> assistants, services, schemas, db, api"]
     assistants -.-> A["Covers endpoint logic, access and token check based on role.<br/>Builds the Page and raises HTTPError.<br/><b>Imports:</b> services, schemas, db, api"]
@@ -382,7 +393,7 @@ stateDiagram-v2
     locked --> active : status
     active --> finished : status
     active --> cancelled : cancel endpoint
-    locked --> cancelled : cancel
+    locked --> cancelled : cancel endpoint
 
     note right of draft
         A draft is the only event that can be deleted,

@@ -1,0 +1,43 @@
+# pyproject.toml
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "event-booking-api"
+version = "0.1.0"
+requires-python = ">=3.14"
+
+# All dependencies are in requirements/
+dependencies = []
+
+[project.scripts]
+builder = "builder.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["app*", "builder*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-config"
+
+[tool.mypy]
+files = ["app"]
+plugins = ["pydantic.mypy"] # Mainly due to BaseSettings
+
+[tool.pydantic-mypy]
+# Without init_typed the plugin rewrites BaseModel __init__ with every field typed as Any,
+# so ApiResponse(status="nonsense") passes even though status is a Literal["success", "fail", "error"].
+init_typed = true
+
+# Rejects unknown keyword arguments for every BaseModel subclass, overriding the even when extra="allow". 
+# It is only for BaseModels that are constructed inside the code, like ApiResponse in app/api/response.py. 
+# Request and response models in endpoints are built by FastAPI, therefore aren't taken into account by mypy.
+init_forbid_extra = true 
+
+[tool.ruff]
+extend-exclude = ["alembic/versions"]
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore re-exports, since a package __init__ imports names for other modules to use.
+"__init__.py" = ["F401"]

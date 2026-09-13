@@ -1,0 +1,59 @@
+name: event-booking
+
+x-db-env: &db-env
+  POSTGRES_USER: ${POSTGRES_USER}
+  POSTGRES_DB: ${POSTGRES_DB}
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      <<: *db-env
+      POSTGRES_PASSWORD_FILE: ${SECRET_DIR}/postgres_password
+      TZ: UTC
+    volumes:
+      - event-booking-db:/var/lib/postgresql
+      - ${SECRET_DIR}:${SECRET_DIR}:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 60s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    environment:
+      <<: *db-env
+      ENVIRONMENT: ${ENVIRONMENT}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL}
+      BOOTSTRAP_ADMIN_FIRST_NAME: ${BOOTSTRAP_ADMIN_FIRST_NAME}
+      BOOTSTRAP_ADMIN_LAST_NAME: ${BOOTSTRAP_ADMIN_LAST_NAME}
+      SECRET_DIR: ${SECRET_DIR}
+      LOG_DIR: ${LOG_DIR}
+      TZ: UTC
+    volumes:
+      - ${SECRET_DIR}:${SECRET_DIR}:ro
+      - ${LOG_DIR}:${LOG_DIR}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+volumes:
+  event-booking-db:

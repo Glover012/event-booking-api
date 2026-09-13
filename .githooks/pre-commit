@@ -1,0 +1,14 @@
+#!/bin/sh
+set -e
+
+for tool in ruff mypy; do
+    command -v "$tool" > /dev/null 2>&1 || {
+        echo "pre-commit: $tool is not on PATH."
+        echo "Activate the virtualenv. Run source .venv/bin/activate."
+        exit 1
+    }
+done
+
+ruff check .
+ruff format --check .
+mypy

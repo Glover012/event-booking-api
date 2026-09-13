@@ -1,0 +1,121 @@
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Self
+
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
+
+
+class EventStatus(StrEnum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    LOCKED = "locked"
+    FINISHED = "finished"
+    CANCELLED = "cancelled"
+
+    @property
+    def next_statuses(self) -> frozenset[EventStatus]:
+        return _ALLOWED_TRANSITIONS[self]
+
+
+# Cancelling has no counterpart, since it has to cancel the bookings along
+# with the event, so it goes through its own endpoint and nothing else.
+# Finished and cancelled statuses are terminal.
+_ALLOWED_TRANSITIONS = {
+    EventStatus.DRAFT: frozenset({EventStatus.ACTIVE}),
+    EventStatus.ACTIVE: frozenset({EventStatus.LOCKED, EventStatus.FINISHED}),
+    EventStatus.LOCKED: frozenset({EventStatus.ACTIVE}),
+    EventStatus.FINISHED: frozenset(),
+    EventStatus.CANCELLED: frozenset(),
+}
+
+
+class CreateEventRequest(BaseModel):
+    """Event creation form. Validates request data and the date range."""
+
+    model_config = ConfigDict(extra="forbid")  # No additional parameters allowed
+
+    name: str = Field(min_length=4, max_length=127)
+    description: str | None = Field(default=None, max_length=2047)
+    location: str = Field(min_length=1, max_length=255)
+    capacity: int = Field(gt=0)
+    # The event-booking-api operates explicitly on UTC.
+    # All timestamp columns are timestamptz, which stores an instant in UTC
+    # and does not keep the zone. On read Postgres renders that instant in
+    # the session TimeZone, which defaults from the server config - here UTC.
+    # A naive datetime (no offset) would be interpreted using that same
+    # session setting - so with the session on UTC it is taken as UTC, but
+    # on a server configured otherwise it would silently mean something else.
+    # AwareDatetime forces the client to send tzinfo, so the instant is
+    # unambiguous no matter how the database server happens to be configured.
+    starts_at: AwareDatetime
+    ends_at: AwareDatetime
+
+    @field_validator("name", "description", "location", mode="before")
+    @classmethod
+    def strip_text_fields(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
+    # Two rules here. The start past-date check has no counterpart
+    # in the database, it only guards against obvious client mistakes.
+    # The range check mirrors ck_events_ends_after_starts, but raises 422
+    # with Pydantic error info instead of a 500 from the database server.
+    # Both values are aware, so comparison is safe regardless
+    # of the timezone client operates on.
+    @model_validator(mode="after")
+    def validate_date_range(self) -> Self:
+        if self.starts_at < datetime.now(UTC):
+            raise ValueError("Event start date must not be in the past.")
+
+        if self.ends_at <= self.starts_at:
+            raise ValueError("Event end date must be later than start.")
+
+        return self
+
+
+class UpdateEventRequest(CreateEventRequest):
+    """
+    Event edit form. Same shape as event creation.
+
+    Status and public visibility are absent, since each is configured
+    by designated endpoint.
+    """
+
+
+class EventResponsePublic(BaseModel):
+    """Response model with public Event attributes."""
+
+    # Construct response model from SQLAlchemy model
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    description: str | None
+    location: str
+    capacity: int
+    status: EventStatus
+    starts_at: datetime
+    ends_at: datetime
+
+
+class EventResponseOwner(EventResponsePublic):
+    """Response model with all Event attributes."""
+
+    public: bool
+    owner_id: int
+
+
+class ChangeEventStatusRequest(BaseModel):
+    """Event status change request. Cancelling has its own endpoint."""
+
+    model_config = ConfigDict(extra="forbid")  # No additional parameters allowed
+
+    status: EventStatus

@@ -1,0 +1,26 @@
+name: event-booking-local
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD_FILE: ${SECRET_DIR}/postgres_password
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - event-booking-db:/var/lib/postgresql
+      - ${SECRET_DIR}:${SECRET_DIR}:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 60s
+      timeout: 3s
+      retries: 3
+      start_period: 30s
+      start_interval: 1s
+
+volumes:
+  event-booking-db:

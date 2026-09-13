@@ -1,0 +1,187 @@
+from sqlalchemy import and_, or_
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from ..api.exceptions import HTTPError
+from ..core.security import HashedPassword
+from ..db.models import Users
+from ..schemas.users import UserRole
+
+
+class UsersService:
+    """
+    Provide ready to use db services for the Users table.
+    """
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def find_by_identity(
+        self,
+        id: int | None = None,
+        username: str | None = None,
+        email: str | None = None,
+    ) -> Users | None:
+        """
+        Returns the account model that matches all provided credentials,
+        or None.
+
+        Does not raise the error. The decision is left for the assistant.
+        """
+        filters = []
+        if id:
+            filters.append(Users.id == id)
+        if username:
+            filters.append(Users.username == username)
+        if email:
+            filters.append(Users.email == email)
+        if not filters:
+            raise ValueError("Provide at least one of: id, username, email.")
+
+        return self.db.query(Users).filter(and_(*filters)).first()
+
+    def credentials_taken(
+        self,
+        username: str | None = None,
+        email: str | None = None,
+    ) -> bool:
+        """
+        Checks whether any account already uses the username or the email.
+        """
+        filters = []
+        if username:
+            filters.append(Users.username == username)
+        if email:
+            filters.append(Users.email == email)
+        if not filters:
+            raise ValueError("Provide at least one of: username, email.")
+
+        return self.db.query(Users).filter(or_(*filters)).first() is not None
+
+    def create(
+        self,
+        username: str,
+        email: str,
+        first_name: str,
+        last_name: str,
+        hashed_password: HashedPassword,
+        role: str,
+    ) -> Users:
+        """
+        Creates a new User account. The provided password has to be already
+        hashed, therefore the plaintext never reaches this layer.
+
+        The unique constraints on email and username are what finally
+        prevent a duplicate.
+        """
+
+        try:
+            new_user = Users(
+                email=email,
+                username=username,
+                first_name=first_name,
+                last_name=last_name,
+                hashed_password=hashed_password,
+                role=role,
+            )
+            self.db.add(new_user)
+            self.db.commit()
+            self.db.refresh(new_user)
+
+            return new_user
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.USER_ALREADY_EXISTS() from e
+
+    def update_password(
+        self,
+        user_model: Users,
+        hashed_password: HashedPassword,
+    ) -> None:
+        """
+        Updates the password on an existing account
+        """
+        try:
+            user_model.hashed_password = hashed_password
+            self.db.add(user_model)
+            self.db.commit()
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def update_role(
+        self,
+        user_model: Users,
+        role: UserRole,
+    ) -> Users:
+        """
+        Sets a new role on an existing account.
+        """
+        try:
+            user_model.role = role
+            self.db.add(user_model)
+            self.db.commit()
+            self.db.refresh(user_model)
+
+            return user_model
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def update_profile(
+        self,
+        user_model: Users,
+        first_name: str,
+        last_name: str,
+    ) -> Users:
+        """
+        Updates the editable profile fields on an existing account.
+
+        Email and username are not touched here.
+        """
+        try:
+            user_model.first_name = first_name
+            user_model.last_name = last_name
+            self.db.add(user_model)
+            self.db.commit()
+            self.db.refresh(user_model)
+
+            return user_model
+
+        except IntegrityError as e:
+            self.db.rollback()
+            raise HTTPError.TRANSACTION_REFUSED() from e
+
+    def list_models(
+        self,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[Users], int]:
+        """
+        Returns one page of accounts with the total row count required by
+        the Page model and the API client.
+
+        No filter here - the admin listing covers every account, the caller's
+        own included.
+
+        Ordered deterministically: newest first, with id breaking ties.
+        Without a deterministic order OFFSET may return the same row on two
+        pages or skip one entirely.
+        """
+        query = self.db.query(Users)
+
+        # Counted before limit/offset, so it describes every matching row,
+        # not just the page
+        total = query.count()
+
+        models = (
+            query.order_by(Users.created_at.desc(), Users.id.desc())
+            .limit(limit)
+            .offset(offset)
+            .all()
+        )
+
+        return models, total

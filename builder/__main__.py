@@ -1,7 +1,7 @@
 import argparse
 
 from .commands import down, files, rebuild_schema, status, up
-from .config import ENVIRONMENTS, LOCAL, Environment
+from .config import ENVIRONMENTS, LOCAL, SEED_FILES, Environment
 from .system import CommandFailed
 
 
@@ -61,10 +61,17 @@ def _add_environment(subparsers, environment: Environment) -> None:
 
     up_parser.add_argument(
         "--seed",
-        action="store_true",
+        # nargs="?" with const keeps --seed behavior exactly as it was before so full seed,
+        # while --seed admin selects a different dataset
+        nargs="?",
+        const="full",  # Default
+        choices=tuple(SEED_FILES),
+        default=None,
         help=(
-            "Load the demo dataset from builder/dataset/seed.sql. Applied only when "
-            "no database volume is already present, otherwise seed is skipped."
+            "Load the demo dataset from builder/dataset. A bare "
+            "--seed loads the full demo dataset, while --seed admin "
+            "loads only a single admin account. Applied only when no database "
+            "volume is already present, otherwise seed is skipped."
         ),
     )
 

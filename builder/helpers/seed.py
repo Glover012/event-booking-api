@@ -1,15 +1,21 @@
-from ..config import SEED_FILE, Environment, variables
+from ..config import SEED_FILES, Environment, variables
 from ..system import compose
 from .console import cyan, green
 
 
-def apply(environment: Environment) -> None:
+def apply(environment: Environment, dataset: str) -> None:
     """
     Streams the seed file into psql, as the database owner.
+
+    The dataset name arrives from argparse choices and it is
+    already validated.
     """
     values = variables(environment)
 
-    print(f"Seeding the {cyan(environment.NAME)} database.")
+    print(
+        f"Seeding the {cyan(environment.NAME)} database "
+        f"with the {cyan(dataset)} dataset."
+    )
 
     compose(
         environment,
@@ -30,7 +36,7 @@ def apply(environment: Environment) -> None:
         # occurred do nothing and leave the database untouched
         "--single-transaction",
         # No -f because the file would have to exist on a container
-        input=SEED_FILE.read_text(),
+        input=SEED_FILES[dataset].read_text(),
     )
 
     print(green("Seed applied."))

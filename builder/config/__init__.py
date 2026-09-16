@@ -13,7 +13,7 @@ from .paths import (
     ENV_FILE,
     REPOSITORY_DIR,
     REVISIONS_DIR,
-    SEED_FILE,
+    SEED_FILES,
 )
 from .revisions import (
     REVISIONS,

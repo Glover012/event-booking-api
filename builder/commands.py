@@ -68,7 +68,7 @@ def up(args: argparse.Namespace) -> None:
 
     if args.seed:
         if not volume:
-            seed.apply(environment)
+            seed.apply(environment, args.seed)
         else:
             print(bold("The database volume already exists, nothing was seeded."))
             print(f"Run {cyan(f'builder {environment.NAME} down --data')} first.")

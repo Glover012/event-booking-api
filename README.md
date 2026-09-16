@@ -283,7 +283,8 @@ A built-in CLI that starts and tears down the application, offering two environm
 |---|---|
 | builder local up | Start the environment, generate secrets when missing. Existing secrets and volumes are reused. Ends by replacing the terminal process with uvicorn. |
 | builder local up --no-api | The same, without starting the uvicorn server. Used mainly in CI. |
-| builder \<env\> up --seed | Also load the demo dataset. Applied only when no database volume exists, so data that is already there is never touched. |
+| builder \<env\> up --seed | Also load the full demo dataset. Applied only when no database volume exists, so data that is already there is never touched. |
+| builder \<env\> up --seed admin | The same, but loads a single admin account instead of the whole dataset. Used by test runs that have to start from an empty system with a known admin account. |
 | builder container up | Start the full stack in containers. |
 | builder \<env\> down | Stop the environment. Nothing is removed unless a flag is given. |
 | builder \<env\> down --logs | Also remove the log directory. Irreversible. |
@@ -297,14 +298,16 @@ A built-in CLI that starts and tears down the application, offering two environm
   database nothing can log into.
 - `rebuild-schema`: asks once, then removes the components of the local environment: volume, secrets, logs and every file in [`alembic/versions`](alembic/versions). It regenerates the initial revision from the db models, re-applies the static revision templates from
   [`builder/revisions`](builder/revisions) on top of it, and verifies the migrations in both directions with `alembic upgrade head` and `alembic downgrade base`.
-- `--seed`: streams [`builder/dataset/seed.sql`](builder/dataset/seed.sql) into `psql` inside the Postgres container, as a single transaction. The volume presence is checked before the containers start, so an existing database and existing data are never touched.
+- `--seed`: streams one dataset from [`builder/dataset`](builder/dataset) into `psql` inside the Postgres container, as a single transaction. A bare `--seed` loads [`seed_full.sql`](builder/dataset/seed_full.sql), the whole demo dataset. `--seed admin` loads [`seed_admin.sql`](builder/dataset/seed_admin.sql) instead: one admin account and nothing else, which is required for automated test runs. The volume presence is checked before the containers start, so an existing database and existing data are never touched.
   In order to run it, remove the database volume first with: `builder <env> down --data`.
 
 ### Seed data
 Data for tests and demonstration. It is raw SQL, so the dataset survives every refactor of the code and it is possible to bypass some API protections, like creating events in the past.
 
 Every value is structured and follows one pattern. The accounts are `user1`, `organizer1` and `admin1`, numbered upward, with their attributes and owned resources named accordingly.
-All share the same password `test`. The exception is the bootstrap `master_admin`, which is created on application boot when the database holds no admin. Its password is then printed and the CLI offers to delete the file right after.
+All share the same password `test`. The exception is the bootstrap `master_admin`, which is created on application boot when the database holds no admin. Its password is randomly generated and printed, then the CLI offers to delete the file right after.
+
+There are two datasets. `seed_full.sql` holds the full dataset: the accounts, events and bookings. `seed_admin.sql` holds only one admin account, `admin1`, with the same password. It exists so an automated test run can log in as an administrator without anything else being loaded into the database, except the bootstrap `master_admin`, which is always created before any dataset is applied.
 
 ### Environments
 The application has two configured environments, **local** and **container**.

@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - dev
+      - tests
   pull_request:
     branches:
       - main
@@ -76,3 +77,36 @@ jobs:
 
       - name: Check types
         run: mypy
+
+  e2e:
+    name: e2e success paths
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      # The builder is standard library only, so no additional requirements.
+      - name: Install the builder
+        run: pip install -e .
+
+      # Local collection run only. No Postman authentication is required.
+      - name: Install the Postman CLI
+        run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      # Returns once every healthcheck passes, so the collection runs on API that already answers.
+      # --seed admin loads a single known admin and nothing else, so the collection
+      # can use the admin only paths too.
+      - name: Start the stack
+        run: builder container up --seed admin
+
+      # --bail stops on the first failure, since the tests are chained together
+      # and each one depends on the previous.
+      - name: Run the collection
+        run: |
+          postman collection run tests/postman/collections/e2e_success_paths \
+            -e tests/postman/environments/e2e_success_paths.environment.yaml \
+            --bail

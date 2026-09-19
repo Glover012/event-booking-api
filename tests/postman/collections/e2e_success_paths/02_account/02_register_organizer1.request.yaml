@@ -1,0 +1,31 @@
+$kind: http-request
+description: "Creates the account that gets promoted to organizer in step 05."
+url: "{{baseUrl}}/users"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{organizer_username}}@example.com",
+      "username": "{{organizer_username}}",
+      "first_name": "Organizer",
+      "last_name": "One",
+      "password": "{{organizer_password}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Account is created as a plain user, not an organizer", () => {
+          pm.expect(pm.response.code).to.eql(201);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("USER_CREATED");
+          pm.expect(body.data.username).to.eql(pm.environment.get("organizer_username"));
+          pm.expect(body.data.role).to.eql("user");
+      });
+settings: {}
+order: 2000

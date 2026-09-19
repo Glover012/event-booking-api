@@ -1,0 +1,28 @@
+$kind: http-request
+description: "Change organizer account role from default user to organizer by admin account."
+url: "{{baseUrl}}/admin/users/{{organizer_id}}/role"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{admin_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "role": "organizer"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Account is promoted to organizer", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("ROLE_CHANGED");
+          pm.expect(body.data.role).to.eql("organizer");
+          pm.expect(body.data.username).to.eql(pm.environment.get("organizer_username"));
+      });
+settings: {}
+order: 5000

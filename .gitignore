@@ -20,3 +20,7 @@ event_booking_api.egg-info/
 .mypy_cache/
 
 .ruff_cache/
+
+.postman/
+postman-cli-reports/
+*.example.yaml

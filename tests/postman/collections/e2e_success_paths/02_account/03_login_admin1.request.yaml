@@ -1,0 +1,29 @@
+$kind: http-request
+description: "Authorize the seeded admin and writes token to environment."
+url: "{{baseUrl}}/auth/token"
+method: POST
+headers:
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+body:
+  type: urlencoded
+  content:
+    username: "{{admin_username}}"
+    password: "{{admin_password}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+
+      pm.test("Admin receives a bearer token", () => {
+          pm.expect(pm.response.code).to.eql(200);
+          pm.expect(body.token_type).to.eql("bearer");
+          pm.expect(body.access_token).to.be.a("string").and.not.empty;
+      });
+
+      if (pm.response.code === 200) {
+          pm.environment.set("admin_token", body.access_token);
+      }
+settings: {}
+order: 3000

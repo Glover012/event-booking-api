@@ -211,9 +211,13 @@ event-booking-api/
 │   └── dataset/            Dataset for demonstration and testing
 ├── alembic/                Database migrations
 ├── docker/                 Dockerfile, compose files, entrypoint
+├── docs/                   Design notes and the demo recording
 ├── requirements/           Dependency files and their respective locks
 └── tests/
-    └── unit/               Tests that need no running environment
+    ├── unit/               Tests that need no running environment
+    └── postman/            API tests run by the Postman CLI
+        ├── collections/    Collections with numbered folders and requests to run in order
+        └── environments/   Variables the run uses
 ```
 
 ## 📌 Project status
@@ -227,6 +231,7 @@ event-booking-api/
 - Python 3.14+
 - Linux or WSL2
 - Docker Engine with the Compose plugin
+- [Postman CLI](https://learning.postman.com/docs/postman-cli/postman-cli-installation/) — only to run the API tests locally
 
 > Docker Desktop was not used, therefore it is unsupported here.
 
@@ -347,13 +352,14 @@ pytest tests/unit
 [`tests/unit`](tests/unit) needs no database and no running application. It currently only tests whether any endpoint method and path pair is repeated, which FastAPI never reports on its own. Routing silently answers with the first one.
 
 ## 🤖 CI
-Three jobs run on every push to `main` and `dev`, and on every pull request to `main`:
+Four jobs run on every push to `main`, `dev` and `tests` and on every pull request to `main`:
 
 | Job | Description |
 |---|---|
 | unit tests | `builder local files`, then `pytest tests/unit` |
 | lint | `ruff check` and `ruff format --check` |
 | types | `mypy` |
+| e2e success paths | `builder container up --seed admin`, then `postman collection run` |
 
 Jobs are separated, so a failing one does not hide the others. Dependencies are installed from [`requirements/requirements-dev.lock`](requirements/requirements-dev.lock), so a new release of some tool or framework will not turn the build red.
 

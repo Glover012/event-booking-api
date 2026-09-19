@@ -1,0 +1,36 @@
+$kind: http-request
+description: "Admin listing every account. Writes account ids to enviornment for use in later steps."
+url: "{{baseUrl}}/admin/users?per_page=100"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{admin_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Admin lists the accounts", () => {
+          pm.expect(pm.response.code).to.eql(200);
+          pm.expect(pm.response.json().code).to.eql("USERS_RETRIEVED");
+      });
+
+      pm.test("Every account is present and its id is captured", () => {
+          const items = pm.response.json().data.items;
+          let admin = null, user = null, organizer = null;
+
+          for (const account of items) {
+              if (account.username === pm.environment.get("admin_username")) admin = account.id;
+              if (account.username === pm.environment.get("user_username")) user = account.id;
+              if (account.username === pm.environment.get("organizer_username")) organizer = account.id;
+          }
+
+          pm.expect(admin, "admin account not found in the listing").to.not.be.null;
+          pm.expect(user, "user account not found in the listing").to.not.be.null;
+          pm.expect(organizer, "organizer account not found in the listing").to.not.be.null;
+
+          pm.environment.set("admin_id", admin);
+          pm.environment.set("user_id", user);
+          pm.environment.set("organizer_id", organizer);
+      });
+settings: {}
+order: 4000

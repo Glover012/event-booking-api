@@ -20,7 +20,10 @@ def apply(environment: Environment, dataset: str) -> None:
     compose(
         environment,
         "exec",
-        "--no-tty",  # TTY isn't used, since stdin is a pipe, not a terminal
+        # TTY isn't used, since stdin is a pipe, not a terminal
+        # -T instead of --no-tty, since the long form isn't present
+        # in older compose versions
+        "-T",
         "postgres",
         "psql",
         "--username",

@@ -1,0 +1,27 @@
+$kind: http-request
+description: |- 
+  Admin reads any event without the ownership filter.
+url: "{{baseUrl}}/admin/events/{{event_id}}"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{admin_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Admin reads an event owned by someone else", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENT_RETRIEVED");
+          pm.expect(body.data.id).to.eql(Number(pm.environment.get("event_id")));
+          pm.expect(body.data.owner_id).to.eql(Number(pm.environment.get("organizer_id")));
+      });
+
+      // The admin can view all the data, so it should still carry public and owner_id.
+      pm.test("Admin sees the event while it is still unpublished", () => {
+          pm.expect(pm.response.json().data.public).to.be.false;
+      });
+settings: {}
+order: 8000

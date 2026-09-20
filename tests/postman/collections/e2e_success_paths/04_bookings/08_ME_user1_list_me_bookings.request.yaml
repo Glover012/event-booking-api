@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  Read from the user side, because the cascade is invisible from the event
+  response alone. The booking confirmed in step 06 has to be cancelled by now.
+url: "{{baseUrl}}/me/bookings?per_page=100"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Own bookings are listed as a page", () => {
+          pm.expect(pm.response.code).to.eql(200);
+          pm.expect(pm.response.json().code).to.eql("ME_BOOKINGS_RETRIEVED");
+      });
+
+      // Cancelling the event cancels its confirmed bookings in the same transaction.
+      pm.test("Cancelling the event cancelled the booking from step 06", () => {
+          const items = pm.response.json().data.items;
+          const booking = items.find((b) => b.id === Number(pm.environment.get("booking_id")));
+
+          pm.expect(booking, "the booking is missing from the listing").to.exist;
+          pm.expect(booking.status).to.eql("cancelled");
+      });
+settings: {}
+order: 8000

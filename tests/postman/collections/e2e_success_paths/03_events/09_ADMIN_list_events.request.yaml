@@ -1,0 +1,26 @@
+$kind: http-request
+description: |-
+  Admin event listing includes all, drafts and unpublished events included.
+url: "{{baseUrl}}/admin/events?per_page=100"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{admin_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Every event is listed as a page", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENTS_RETRIEVED");
+          pm.expect(body.data).to.include.keys("items", "page", "pages", "total");
+      });
+
+      pm.test("The unpublished event is visible to the admin", () => {
+          const ids = pm.response.json().data.items.map((e) => e.id);
+          pm.expect(ids).to.include(Number(pm.environment.get("event_id")));
+      });
+settings: {}
+order: 9000

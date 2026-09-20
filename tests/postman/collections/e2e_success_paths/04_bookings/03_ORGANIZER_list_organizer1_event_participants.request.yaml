@@ -1,0 +1,32 @@
+$kind: http-request
+description: |-
+  The organizer view of the same booking, joined with the account behind it.
+url: "{{baseUrl}}/organizer/events/{{event_id}}/participants?per_page=100"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Participants are listed as a page", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("PARTICIPANTS_RETRIEVED");
+          pm.expect(body.data).to.include.keys("items", "page", "pages", "total");
+      });
+
+      // The join has to carry the account details, not just the booking row.
+      pm.test("The booking is listed against the account that made it", () => {
+          const items = pm.response.json().data.items;
+          const participant = items.find((p) => p.booking_id === Number(pm.environment.get("booking_id")));
+
+          pm.expect(participant, "the booking is missing from the participants").to.exist;
+          pm.expect(participant.username).to.eql(pm.environment.get("user_username"));
+          pm.expect(participant.status).to.eql("confirmed");
+          pm.expect(participant.ticket_amount).to.eql(2);
+      });
+settings: {}
+order: 3000

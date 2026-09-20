@@ -1,0 +1,30 @@
+$kind: http-request
+description: |-
+  Returns event updated in 04 and 05, with owner data fields view.
+url: "{{baseUrl}}/organizer/events/{{event_id}}"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Own event is returned", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("ME_EVENT_RETRIEVED");
+          pm.expect(body.data.id).to.eql(Number(pm.environment.get("event_id")));
+      });
+
+      // Confirms changes from steps 04 and 05.
+      pm.test("The stored event carries the changes from steps 04 and 05", () => {
+          const data = pm.response.json().data;
+          pm.expect(data.status).to.eql("active");
+          pm.expect(data.capacity).to.eql(5);
+          pm.expect(data.name).to.eql("organizer1 event updated");
+          pm.expect(data.public).to.be.false;
+      });
+settings: {}
+order: 6000

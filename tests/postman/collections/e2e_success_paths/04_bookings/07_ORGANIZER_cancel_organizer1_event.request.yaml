@@ -1,0 +1,26 @@
+$kind: http-request
+description: |-
+  Cancel is terminal for the event, and the only path that cancels also all its bookings 
+  in one transaction. Step 08 cofirms that bookings were cancelled too.
+url: "{{baseUrl}}/organizer/events/{{event_id}}/cancel"
+method: POST
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: text
+  content: ""
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Event is cancelled", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENT_CANCELLED");
+          pm.expect(body.data.status).to.eql("cancelled");
+          pm.expect(body.data.id).to.eql(Number(pm.environment.get("event_id")));
+      });
+settings: {}
+order: 7000

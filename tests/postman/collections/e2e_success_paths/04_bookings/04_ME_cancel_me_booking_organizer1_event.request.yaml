@@ -1,0 +1,25 @@
+$kind: http-request
+description: |-
+  Cancelling keeps the row and returns the tickets to the pool, since only confirmed rows count.
+url: "{{baseUrl}}/me/bookings/{{booking_id}}/cancel"
+method: POST
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+body:
+  type: text
+  content: ""
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Booking is cancelled", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("BOOKING_CANCELLED");
+          pm.expect(body.data.status).to.eql("cancelled");
+          pm.expect(body.data.id).to.eql(Number(pm.environment.get("booking_id")));
+      });
+settings: {}
+order: 4000

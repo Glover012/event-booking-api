@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  Unauthenticated public endpoint. Returns public event model, it does not expose owner_id and public flag."
+url: "{{baseUrl}}/events/{{event_id}}"
+method: GET
+headers:
+  Accept: application/json
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Published event is readable without a token", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENT_RETRIEVED");
+          pm.expect(body.data.id).to.eql(Number(pm.environment.get("event_id")));
+          pm.expect(body.data.capacity).to.eql(5);
+      });
+
+      // Owner_id and public flag is visible only to owner and admin.
+      pm.test("The public model hides the owner and the visibility flag", () => {
+          const data = pm.response.json().data;
+          pm.expect(data).to.not.have.property("owner_id");
+          pm.expect(data).to.not.have.property("public");
+      });
+settings: {}
+order: 12000

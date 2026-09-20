@@ -1,0 +1,34 @@
+$kind: http-request
+description: |-
+  The same account books the same event a second time. It is allowed because
+  uq_bookings_active is a partial index on confirmed rows, so cancelling in step 04
+  freed the pair. That makes booking possible again.
+url: "{{baseUrl}}/events/{{event_id}}/bookings"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "ticket_amount": 2
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("The account books the same event again", () => {
+          pm.expect(pm.response.code).to.eql(201);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("BOOKING_CREATED");
+          pm.expect(body.data.status).to.eql("confirmed");
+      });
+
+      if (pm.response.code === 201) {
+          pm.environment.set("booking_id", pm.response.json().data.id);
+      }
+settings: {}
+order: 6000

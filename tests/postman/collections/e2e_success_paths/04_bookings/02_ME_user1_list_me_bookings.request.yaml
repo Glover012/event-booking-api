@@ -1,0 +1,29 @@
+$kind: http-request
+description: |-
+  The caller's own booking history, cancelled rows included.
+url: "{{baseUrl}}/me/bookings?per_page=100"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Own bookings are listed as a page", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("ME_BOOKINGS_RETRIEVED");
+          pm.expect(body.data).to.include.keys("items", "page", "pages", "total");
+      });
+
+      pm.test("The booking from step 01 is there and still confirmed", () => {
+          const items = pm.response.json().data.items;
+          const booking = items.find((b) => b.id === Number(pm.environment.get("booking_id")));
+
+          pm.expect(booking, "the booking is missing from the listing").to.exist;
+          pm.expect(booking.status).to.eql("confirmed");
+      });
+settings: {}
+order: 2000

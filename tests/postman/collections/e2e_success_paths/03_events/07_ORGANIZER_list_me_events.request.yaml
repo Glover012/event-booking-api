@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  The owner event listing shows all, including drafts. Test if draft was deleted succesfully.
+url: "{{baseUrl}}/organizer/events?per_page=100"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Own events are listed as a page", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("ME_EVENTS_RETRIEVED");
+          pm.expect(body.data).to.include.keys("items", "page", "pages", "total");
+      });
+
+      pm.test("The listing holds the event and not the deleted draft", () => {
+          const ids = pm.response.json().data.items.map((e) => e.id);
+
+          pm.expect(ids, "the created organizer1 event in step 03 is missing").to.include(Number(pm.environment.get("event_id")));
+          pm.expect(ids, "the draft deleted in step 02 is still listed").to.not.include(Number(pm.environment.get("test_event_id")));
+      });
+settings: {}
+order: 7000

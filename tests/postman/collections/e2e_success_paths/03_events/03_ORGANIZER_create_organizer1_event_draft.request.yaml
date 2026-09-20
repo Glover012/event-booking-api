@@ -1,0 +1,47 @@
+$kind: http-request
+description: |- 
+  Create the event every later step use. Capacity starts at 10 and step 05 lowers it to 5.
+url: "{{baseUrl}}/organizer/events"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "organizer1 event",
+      "location": "organizer1 location",
+      "capacity": 10,
+      "starts_at": "{{starts_at}}",
+      "ends_at": "{{ends_at}}",
+      "description": "organizer1 event description"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      // The create and update forms both reject a start date in the past,
+      // and require an aware datatime objects.
+      const day = 24 * 60 * 60 * 1000;
+      pm.variables.set("starts_at", new Date(Date.now() + 7 * day).toISOString());
+      pm.variables.set("ends_at", new Date(Date.now() + 7 * day + 2 * 60 * 60 * 1000).toISOString());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Event is created as a private draft", () => {
+          pm.expect(pm.response.code).to.eql(201);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENT_CREATED");
+          pm.expect(body.data.status).to.eql("draft");
+          pm.expect(body.data.public).to.be.false;
+          pm.expect(body.data.capacity).to.eql(10);
+      });
+
+      if (pm.response.code === 201) {
+          pm.environment.set("event_id", pm.response.json().data.id);
+      }
+settings: {}
+order: 3000

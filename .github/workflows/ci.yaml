@@ -136,4 +136,3 @@ jobs:
         run: |
           postman collection run tests/postman/collections/e2e_failure_paths \
             -e tests/postman/environments/e2e_failure_paths.environment.yaml \
-            --bail

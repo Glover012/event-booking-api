@@ -78,7 +78,7 @@ jobs:
       - name: Check types
         run: mypy
 
-  e2e:
+  e2e-success:
     name: e2e success paths
     runs-on: ubuntu-latest
 
@@ -109,4 +109,31 @@ jobs:
         run: |
           postman collection run tests/postman/collections/e2e_success_paths \
             -e tests/postman/environments/e2e_success_paths.environment.yaml \
+            --bail
+
+  e2e-failure:
+    name: e2e failure paths
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install the builder
+        run: pip install -e .
+
+      - name: Install the Postman CLI
+        run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      # The full dataset contains all the data for API testing
+      - name: Start the stack
+        run: builder container up --seed full
+
+      - name: Run the collection
+        run: |
+          postman collection run tests/postman/collections/e2e_failure_paths \
+            -e tests/postman/environments/e2e_failure_paths.environment.yaml \
             --bail

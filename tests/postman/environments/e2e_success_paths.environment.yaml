@@ -1,4 +1,4 @@
-name: event_booking_api
+name: e2e_success_paths
 values:
   - { key: baseUrl,            value: 'http://localhost:8000' }
   - { key: admin_username,     value: 'admin1' }

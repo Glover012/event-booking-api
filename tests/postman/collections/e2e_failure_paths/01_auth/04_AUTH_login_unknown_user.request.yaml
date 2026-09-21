@@ -1,0 +1,32 @@
+$kind: http-request
+description: |-
+  Try login with a username that does not exist. The expectation is identical to
+  step 03: authenticate raises the same error for a missing account and for a
+  wrong password, so the response never confirms whether an account exists.
+url: "{{baseUrl}}/auth/token"
+method: POST
+headers:
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+body:
+  type: urlencoded
+  content:
+    username: "{{unknown_username}}"
+    password: "{{seed_password}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("An unknown account is refused", () => {
+          pm.expect(pm.response.code).to.eql(401);
+
+          const body = pm.response.json();
+          pm.expect(body.status).to.eql("fail");
+          pm.expect(body.code).to.eql("INVALID_CREDENTIALS");
+      });
+
+      pm.test("The auth header is returned", () => {
+          pm.expect(pm.response.headers.get("WWW-Authenticate")).to.eql("Bearer");
+      });
+settings: {}
+order: 4000

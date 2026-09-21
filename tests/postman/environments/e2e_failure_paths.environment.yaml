@@ -1,0 +1,15 @@
+name: e2e_failure_paths
+values:
+  - { key: baseUrl,                  value: 'http://localhost:8000' }
+
+  # Seeded accounts, all sharing one password 'test'
+  - { key: admin_username,           value: 'admin1' }
+  - { key: organizer_username,       value: 'organizer1' }
+  - { key: other_organizer_username, value: 'organizer2' }
+  - { key: user_username,            value: 'user1' }
+  - { key: seed_password,            value: 'test' }
+
+  # Wrong inputs
+  - { key: wrong_password,           value: 'WrongPassword1!' }
+  - { key: unknown_username,         value: 'nobody_here' }
+  - { key: malformed_token,          value: 'not-a-jwt' }

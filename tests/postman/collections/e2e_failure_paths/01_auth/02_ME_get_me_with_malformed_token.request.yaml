@@ -1,0 +1,26 @@
+$kind: http-request
+description: |-
+  Get me info with a token that is not a JWT, just a random string.
+  A malformed token, an expired one and a missing claim all end the same way.
+url: "{{baseUrl}}/me"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{malformed_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A malformed token is refused", () => {
+          pm.expect(pm.response.code).to.eql(401);
+
+          const body = pm.response.json();
+          pm.expect(body.status).to.eql("fail");
+          pm.expect(body.code).to.eql("AUTHENTICATION_FAILED");
+      });
+
+      pm.test("The auth header is returned", () => {
+          pm.expect(pm.response.headers.get("WWW-Authenticate")).to.eql("Bearer");
+      });
+settings: {}
+order: 2000

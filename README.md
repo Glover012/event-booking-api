@@ -217,13 +217,13 @@ event-booking-api/
     ├── unit/               Tests that need no running environment
     └── postman/            API tests run by the Postman CLI
         ├── collections/    Collections with numbered folders and requests to run in order
-        └── environments/   Variables the run uses
+        └── environments/   Variables each collection needs
 ```
 
 ## 📌 Project status
 **MVP, version 0.1.0.** The complete loop works end to end: register, log in, create an event, publish it, book a ticket, cancel the booking, cancel the event.
 
-25 endpoints, static analysis and continuous integration are set up. The test suite along with additional features and fixes is in development.
+25 endpoints, static analysis and continuous integration are set up. The API end to end tests are covered by two Postman collections, the pytest suite is in development.
 
 > Developed and tested on Ubuntu 26.04 under WSL2, with Docker Engine installed inside the distribution.
 
@@ -303,8 +303,7 @@ A built-in CLI that starts and tears down the application, offering two environm
   database nothing can log into.
 - `rebuild-schema`: asks once, then removes the components of the local environment: volume, secrets, logs and every file in [`alembic/versions`](alembic/versions). It regenerates the initial revision from the db models, re-applies the static revision templates from
   [`builder/revisions`](builder/revisions) on top of it, and verifies the migrations in both directions with `alembic upgrade head` and `alembic downgrade base`.
-- `--seed`: streams one dataset from [`builder/dataset`](builder/dataset) into `psql` inside the Postgres container, as a single transaction. A bare `--seed` loads [`seed_full.sql`](builder/dataset/seed_full.sql), the whole demo dataset. `--seed admin` loads [`seed_admin.sql`](builder/dataset/seed_admin.sql) instead: one admin account and nothing else, which is required for automated test runs. The volume presence is checked before the containers start, so an existing database and existing data are never touched.
-  In order to run it, remove the database volume first with: `builder <env> down --data`.
+- `--seed`: streams one dataset from [`builder/dataset`](builder/dataset) into `psql` inside the Postgres container, as a single transaction. A bare `--seed` loads [`seed_full.sql`](builder/dataset/seed_full.sql), the whole demo dataset. `--seed admin` loads [`seed_admin.sql`](builder/dataset/seed_admin.sql) instead: one admin account and nothing else, which is required for e2e_success_paths test runs. The volume presence is checked before the containers start, so an existing database and existing data are never touched. In order to run it, remove the database volume first with: `builder <env> down --data`.
 
 ### Seed data
 Data for tests and demonstration. It is raw SQL, so the dataset survives every refactor of the code and it is possible to bypass some API protections, like creating events in the past.
@@ -340,26 +339,61 @@ The Builder CLI never writes secrets into `.env` and never passes them as enviro
 Only `bootstrap_admin_password` is printed. Right after the bootstrap admin account is created the CLI offers to delete the file on the spot. Copy it, remove the file, log in and change the password.
 
 ## 🧪 Tests
-The test suite needs the generated files before it can import the API, because the settings resolve the database URL while the module is being imported:
+Two tools: pytest imports the app and runs unit tests, while Postman sends requests to a running server over HTTP.
+
+### pytest
+The suite needs the generated files (secrets, .env) before it can import the API, since settings are resolved while the module is being imported.
+
+Running:
 ```bash
 builder local files
 ```
-
 ```bash
 pytest tests/unit
 ```
 
 [`tests/unit`](tests/unit) needs no database and no running application. It currently only tests whether any endpoint method and path pair is repeated, which FastAPI never reports on its own. Routing silently answers with the first one.
 
+### postman
+Two collections, run by the Postman CLI against a running server. Each collection runs on a different dataset.
+
+#### **[`e2e_success_paths`](tests/postman/collections/e2e_success_paths)**
+One chain over all 25 endpoints, from registration through an admin promoting an account to organizer role, an event created, activated, published and booked, to the booking and the event cancellation. Every step performs an action that the next one needs, so the chain only works as a whole and in the exact order.
+
+Running:
+```bash
+builder container up --seed admin
+```
+```bash
+postman collection run tests/postman/collections/e2e_success_paths -e tests/postman/environments/e2e_success_paths.environment.yaml --bail # Bail stops on the first error, since success_paths is a chain
+```
+
+`--seed admin` loads one known admin and nothing else, so the run starts from an empty system and creates every account it needs. A second run on the same database volume will raise `USER_ALREADY_EXISTS`. Run `builder container down --data` first.
+
+#### **[`e2e_failure_paths`](tests/postman/collections/e2e_failure_paths)**
+23 checks that assert the API refuses what it should, grouped by the HTTP status code: `401` for a missing or malformed token and for wrong credentials, `422` for a body the schema validation rejects, `403` for a role reaching for higher
+permissions, `404` for somebody else's or an unpublished resource, and `409` for operations that the domain forbids, such as booking a sold out event or lowering capacity below the confirmed ticket count.
+
+Running:
+```bash
+builder container up --seed full
+```
+```bash
+postman collection run tests/postman/collections/e2e_failure_paths -e tests/postman/environments/e2e_failure_paths.environment.yaml
+```
+
+`--seed full` loads the complete dataset, since these tests operate on already known data. Unlike the success paths, they can be run many times in a row on the same seeded database volume.
+
 ## 🤖 CI
-Four jobs run on every push to `main`, `dev` and `tests` and on every pull request to `main`:
+Five jobs run on every push to `main`, `dev` and `tests` and on every pull request to `main`:
 
 | Job | Description |
 |---|---|
 | unit tests | `builder local files`, then `pytest tests/unit` |
 | lint | `ruff check` and `ruff format --check` |
 | types | `mypy` |
-| e2e success paths | `builder container up --seed admin`, then `postman collection run` |
+| e2e success paths | `builder container up --seed admin`, then `postman collection run ...` |
+| e2e failure paths | `builder container up --seed full`, then `postman collection run ...` |
 
 Jobs are separated, so a failing one does not hide the others. Dependencies are installed from [`requirements/requirements-dev.lock`](requirements/requirements-dev.lock), so a new release of some tool or framework will not turn the build red.
 
@@ -382,7 +416,7 @@ Hooks can be skipped with `git commit --no-verify`.
 - Events do not become finished automatically. The status transition has to be made by the organizer.
 - The public event model does not expose how many tickets are left. Clients see capacity but not availability.
 - No rate limiting on any route.
-- The test suite only checks for duplicate routes.
+- The pytest test suite only checks for duplicate routes.
 - Admins cannot block accounts and cannot moderate events.
 - Containers run as the root user.
 - Old data is never removed.
@@ -390,11 +424,10 @@ Hooks can be skipped with `git commit --no-verify`.
 ## 🛣️ Roadmap
 ### 📝 Planned
 - Fix the items listed under Known limitations first.
-- Tests:
+- Tests in pytest:
   - database constraints, the booking row lock, the cancel transaction and overbooking.
   - the service layer.
-  - access control, user validation and assistant logic.
-  - end to end over HTTP against the containerised stack.
+  - user validation and assistant logic.
 - Refactor the service layer, where the code can be simplified and reduced.
 - Add database row lock timeout.
 - Automatic status transition to finished after the event ends.

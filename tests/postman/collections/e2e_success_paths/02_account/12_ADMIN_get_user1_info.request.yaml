@@ -1,0 +1,22 @@
+$kind: http-request
+description: |-
+  Admin path returns user info.
+url: "{{baseUrl}}/admin/users/{{user_id}}"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{admin_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Admin reads the user1 account info by id", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("USER_RETRIEVED");
+          pm.expect(body.data.id).to.eql(Number(pm.environment.get("user_id")));
+          pm.expect(body.data.username).to.eql(pm.environment.get("user_username"));
+      });
+settings: {}
+order: 12000

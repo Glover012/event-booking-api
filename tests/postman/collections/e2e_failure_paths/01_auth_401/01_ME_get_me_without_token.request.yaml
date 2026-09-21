@@ -1,0 +1,23 @@
+$kind: http-request
+description: "Try get me info path without authentication token and header."
+url: "{{baseUrl}}/me"
+method: GET
+headers:
+  Accept: application/json
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A missing token, access refused", () => {
+          pm.expect(pm.response.code).to.eql(401);
+
+          const body = pm.response.json();
+          pm.expect(body.status).to.eql("fail");
+          pm.expect(body.code).to.eql("NOT_AUTHENTICATED");
+      });
+
+      pm.test("The auth header is returned", () => {
+          pm.expect(pm.response.headers.get("WWW-Authenticate")).to.eql("Bearer");
+      });
+settings: {}
+order: 1000

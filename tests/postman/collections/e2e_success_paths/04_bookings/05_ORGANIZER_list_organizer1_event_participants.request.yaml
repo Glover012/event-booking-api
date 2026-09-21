@@ -1,0 +1,32 @@
+$kind: http-request
+description: |-
+  The same listing after the cancellation. The row stays, its status does not.
+url: "{{baseUrl}}/organizer/events/{{event_id}}/participants?per_page=100"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Participants are listed as a page", () => {
+          pm.expect(pm.response.code).to.eql(200);
+          pm.expect(pm.response.json().code).to.eql("PARTICIPANTS_RETRIEVED");
+      });
+
+      // This proves that step 04 reached the database.
+      pm.test("The cancelled booking is kept as history, not removed", () => {
+          const items = pm.response.json().data.items;
+          const participant = items.find((p) => p.booking_id === Number(pm.environment.get("booking_id")));
+
+          pm.expect(participant, "the cancelled booking disappeared from the listing").to.exist;
+          pm.expect(participant.status).to.eql("cancelled");
+      });
+
+      pm.test("No confirmed booking is left on the event", () => {
+          const confirmed = pm.response.json().data.items.filter((p) => p.status === "confirmed");
+          pm.expect(confirmed).to.be.an("array").that.is.empty;
+      });
+settings: {}
+order: 5000

@@ -1,0 +1,31 @@
+$kind: http-request
+description: "Creates the standard account."
+url: "{{baseUrl}}/users"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{user_username}}@example.com",
+      "username": "{{user_username}}",
+      "first_name": "User",
+      "last_name": "One",
+      "password": "{{user_password}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("User is created with the user role", () => {
+          pm.expect(pm.response.code).to.eql(201);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("USER_CREATED");
+          pm.expect(body.data.username).to.eql(pm.environment.get("user_username"));
+          pm.expect(body.data.role).to.eql("user");
+      });
+settings: {}
+order: 1000

@@ -1,0 +1,34 @@
+$kind: http-request
+description: |-
+  Booking is only possible on a published, active event whose start date is still ahead.
+url: "{{baseUrl}}/events/{{event_id}}/bookings"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "ticket_amount": 2
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Booking is created and confirmed", () => {
+          pm.expect(pm.response.code).to.eql(201);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("BOOKING_CREATED");
+          pm.expect(body.data.status).to.eql("confirmed");
+          pm.expect(body.data.ticket_amount).to.eql(2);
+          pm.expect(body.data.event_id).to.eql(Number(pm.environment.get("event_id")));
+      });
+
+      if (pm.response.code === 201) {
+          pm.environment.set("booking_id", pm.response.json().data.id);
+      }
+settings: {}
+order: 1000

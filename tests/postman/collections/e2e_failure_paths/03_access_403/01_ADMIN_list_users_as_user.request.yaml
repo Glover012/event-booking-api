@@ -1,0 +1,17 @@
+$kind: http-request
+description: "Test admin path access by regular user."
+url: "{{baseUrl}}/admin/users"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A user is refused an admin route", () => {
+          pm.expect(pm.response.code).to.eql(403);
+          pm.expect(pm.response.json().code).to.eql("FORBIDDEN");
+      });
+settings: {}
+order: 1000

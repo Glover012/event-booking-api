@@ -1,0 +1,41 @@
+$kind: http-request
+description: |-
+  Attemt to set incorrect data range. Ends_at before start_at.
+url: "{{baseUrl}}/organizer/events"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "reversed date range",
+      "description": null,
+      "location": "nowhere",
+      "capacity": 10,
+      "starts_at": "{{starts_at}}",
+      "ends_at": "{{ends_at}}"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const day = 24 * 60 * 60 * 1000;
+      pm.variables.set("starts_at", new Date(Date.now() + 30 * day).toISOString());
+      pm.variables.set("ends_at", new Date(Date.now() + 25 * day).toISOString());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("An event ending before it starts is rejected", () => {
+          pm.expect(pm.response.code).to.eql(422);
+
+          const body = pm.response.json();
+          pm.expect(body.status).to.eql("fail");
+          pm.expect(body.code).to.eql("VALIDATION_ERROR");
+          pm.expect(body.data).to.be.an("array").and.not.empty;
+          pm.expect(body.data[0].msg).to.include("Event end date must be later than start");
+      });
+settings: {}
+order: 2000

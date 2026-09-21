@@ -1,0 +1,29 @@
+$kind: http-request
+description: "Authorize standard user account and writes token to environment."
+url: "{{baseUrl}}/auth/token"
+method: POST
+headers:
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+body:
+  type: urlencoded
+  content:
+    username: "{{user_username}}"
+    password: "{{user_password}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+
+      pm.test("User receives a bearer token", () => {
+          pm.expect(pm.response.code).to.eql(200);
+          pm.expect(body.token_type).to.eql("bearer");
+          pm.expect(body.access_token).to.be.a("string").and.not.empty;
+      });
+
+      if (pm.response.code === 200) {
+          pm.environment.set("user_token", body.access_token);
+      }
+settings: {}
+order: 7000

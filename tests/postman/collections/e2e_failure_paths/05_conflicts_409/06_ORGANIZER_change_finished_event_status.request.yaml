@@ -1,0 +1,25 @@
+$kind: http-request
+description: |-
+  Organier tries to change event finished event status to active.
+url: "{{baseUrl}}/organizer/events/{{finished_event_id}}/status"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "status": "active"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A finished event accepts no transition", () => {
+          pm.expect(pm.response.code).to.eql(409);
+          pm.expect(pm.response.json().code).to.eql("INVALID_STATUS_TRANSITION");
+      });
+settings: {}
+order: 6000

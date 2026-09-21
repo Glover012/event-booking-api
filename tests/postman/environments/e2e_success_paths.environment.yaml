@@ -1,0 +1,19 @@
+name: e2e_success_paths
+values:
+  - { key: baseUrl,            value: 'http://localhost:8000' }
+  - { key: admin_username,     value: 'admin1' }
+  - { key: admin_password,     value: 'test' }
+  - { key: user_username,      value: 'user1' }
+  - { key: user_password,      value: 'Test1234!' }
+  - { key: user_new_password,  value: 'Test12345!' }
+  - { key: organizer_username, value: 'organizer1' }
+  - { key: organizer_password, value: 'Test1234!' }
+  - { key: admin_id,           value: '' }
+  - { key: user_id,            value: '' }
+  - { key: organizer_id,       value: '' }
+  - { key: admin_token,        value: '' }
+  - { key: user_token,         value: '' }
+  - { key: organizer_token,    value: '' }
+  - { key: event_id,           value: '' }
+  - { key: test_event_id,      value: '' }
+  - { key: booking_id,         value: '' }

@@ -1,0 +1,25 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/health"
+method: GET
+headers:
+  Accept: application/json
+body:
+  type: text
+  content: ""
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      const body = pm.response.json();
+
+      pm.test("Health check answers 200", () => {
+          pm.expect(pm.response.code).to.eql(200);
+      });
+
+      pm.test("Service reports itself as ok", () => {
+          pm.expect(body.status).to.eql("ok");
+          pm.expect(body.service).to.eql("event-booking-api");
+      });
+settings: {}
+order: 1000

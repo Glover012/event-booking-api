@@ -1,0 +1,50 @@
+$kind: http-request
+description: |-
+  Editing runs before any booking. Once tickets are held the dates cannot be edited and
+  the capacity cannot be lowered below the confirmed booking count.
+url: "{{baseUrl}}/organizer/events/{{event_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "organizer1 event updated",
+      "location": "organizer1 location updated",
+      "capacity": 5,
+      "starts_at": "{{starts_at}}",
+      "ends_at": "{{ends_at}}",
+      "description": "organizer1 event description updated"
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      // The create and update forms both reject a start date in the past,
+      // and require an aware datatime objects.
+      const day = 24 * 60 * 60 * 1000;
+      pm.variables.set("starts_at", new Date(Date.now() + 7 * day).toISOString());
+      pm.variables.set("ends_at", new Date(Date.now() + 7 * day + 2 * 60 * 60 * 1000).toISOString());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Editable columns are updated", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENT_UPDATED");
+          pm.expect(body.data.capacity).to.eql(5);
+          pm.expect(body.data.name).to.eql("organizer1 event updated");
+      });
+
+      // Change status and publishing have their own endpoints, and editing must not change them.
+      pm.test("Editing leaves the status and the visibility alone", () => {
+          const data = pm.response.json().data;
+          pm.expect(data.status).to.eql("active");
+          pm.expect(data.public).to.be.false;
+      });
+settings: {}
+order: 5000

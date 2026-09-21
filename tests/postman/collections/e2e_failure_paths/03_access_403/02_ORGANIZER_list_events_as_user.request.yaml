@@ -1,0 +1,17 @@
+$kind: http-request
+description: "Test organizer path access by regular user."
+url: "{{baseUrl}}/organizer/events"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A user is refused an organizer route", () => {
+          pm.expect(pm.response.code).to.eql(403);
+          pm.expect(pm.response.json().code).to.eql("FORBIDDEN");
+      });
+settings: {}
+order: 2000

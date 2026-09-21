@@ -1,0 +1,28 @@
+$kind: http-request
+description: |-
+  Returns user info nad confirms the profile update data from step 08.
+url: "{{baseUrl}}/me"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Own account info is returned", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("ME_INFO_RETRIEVED");
+          pm.expect(body.data.username).to.eql(pm.environment.get("user_username"));
+          pm.expect(body.data.role).to.eql("user");
+      });
+
+      pm.test("The profile updated succesfully in step 08", () => {
+          const data = pm.response.json().data;
+          pm.expect(data.first_name).to.eql("Updated fn");
+          pm.expect(data.last_name).to.eql("Updated ln");
+      });
+settings: {}
+order: 11000

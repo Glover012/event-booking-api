@@ -1,0 +1,25 @@
+$kind: http-request
+description: |-
+  User tries to book same event twice.
+url: "{{baseUrl}}/events/{{active_event_id}}/bookings"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "ticket_amount": 1
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("One account cannot hold two confirmed bookings on one event", () => {
+          pm.expect(pm.response.code).to.eql(409);
+          pm.expect(pm.response.json().code).to.eql("BOOKING_ALREADY_EXISTS");
+      });
+settings: {}
+order: 2000

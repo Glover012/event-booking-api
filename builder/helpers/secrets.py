@@ -1,4 +1,5 @@
 import secrets
+import sys
 from pathlib import Path
 
 from ..config import BOOTSTRAP_PASSWORD, SECRET_NAMES, Environment
@@ -68,9 +69,14 @@ def print_bootstrap_password(environment: Environment) -> None:
     """
     Print the bootstrap admin password once and offers to delete the file.
 
+    Nothing is printed without a terminal.
+
     Only bootstrap admin password is disposable. Other secrets are required
     for the next runs with the same db volume.
     """
+    if not sys.stdout.isatty():
+        return
+
     if not exists(environment, BOOTSTRAP_PASSWORD):
         print("Bootstrap admin password already removed.")
         return

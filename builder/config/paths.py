@@ -14,4 +14,7 @@ ALEMBIC_VERSIONS_DIR = REPOSITORY_DIR / "alembic" / "versions"
 ENV_FILE = REPOSITORY_DIR / ".env"
 REVISIONS_DIR = REPOSITORY_DIR / "builder" / "revisions"
 DATASET_DIR = REPOSITORY_DIR / "builder" / "dataset"
-SEED_FILE = DATASET_DIR / "seed.sql"
+SEED_FILES = {
+    "full": DATASET_DIR / "seed_full.sql",
+    "admin": DATASET_DIR / "seed_admin.sql",
+}

@@ -1,0 +1,29 @@
+$kind: http-request
+description: |-
+  The only endpoint that sets event public.
+url: "{{baseUrl}}/organizer/events/{{event_id}}/publish"
+method: POST
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: text
+  content: ""
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Event becomes publicly visible", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENT_PUBLISHED");
+          pm.expect(body.data.public).to.be.true;
+      });
+
+      // Publishing only flips visibility, the lifecycle status remains the same.
+      pm.test("Publishing leaves the status alone", () => {
+          pm.expect(pm.response.json().data.status).to.eql("active");
+      });
+settings: {}
+order: 10000

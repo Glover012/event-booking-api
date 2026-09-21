@@ -1,0 +1,26 @@
+$kind: http-request
+description: |-
+  Unauthenticated public endpoint. Returns publicly visible events.
+url: "{{baseUrl}}/events?per_page=100"
+method: GET
+headers:
+  Accept: application/json
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Public listing answers without a token", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENTS_RETRIEVED");
+          pm.expect(body.data).to.include.keys("items", "page", "pages", "total");
+      });
+
+      // This is the proof that step 10 worked: before publishing the event won't be visible here.
+      pm.test("The published event is now publicly listed", () => {
+          const ids = pm.response.json().data.items.map((e) => e.id);
+          pm.expect(ids).to.include(Number(pm.environment.get("event_id")));
+      });
+settings: {}
+order: 11000

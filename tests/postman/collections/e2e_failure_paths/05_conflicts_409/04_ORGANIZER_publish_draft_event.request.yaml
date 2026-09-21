@@ -1,0 +1,21 @@
+$kind: http-request
+description: |-
+  Organizer tries to publish draft event. Before publishing event must be active first.
+url: "{{baseUrl}}/organizer/events/{{draft_event_id}}/publish"
+method: POST
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: text
+  content: ""
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A draft cannot be published", () => {
+          pm.expect(pm.response.code).to.eql(409);
+          pm.expect(pm.response.json().code).to.eql("EVENT_NOT_PUBLISHABLE");
+      });
+settings: {}
+order: 4000

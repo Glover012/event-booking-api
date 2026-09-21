@@ -1,0 +1,38 @@
+$kind: http-request
+description: |-
+  Attempt to edit event and set ticket amount below confirmed booking count.
+  The event holds six confirmed tickets, so a capacity of five would put it
+  past its own limit.
+url: "{{baseUrl}}/organizer/events/{{active_event_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "capacity below booked attempt",
+      "location": "somewhere",
+      "capacity": 5,
+      "starts_at": "{{starts_at}}",
+      "ends_at": "{{ends_at}}",
+      "description": null
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const day = 24 * 60 * 60 * 1000;
+      pm.variables.set("starts_at", new Date(Date.now() + 30 * day).toISOString());
+      pm.variables.set("ends_at", new Date(Date.now() + 30 * day + 4 * 60 * 60 * 1000).toISOString());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Capacity cannot drop below the tickets already booked", () => {
+          pm.expect(pm.response.code).to.eql(409);
+          pm.expect(pm.response.json().code).to.eql("CAPACITY_BELOW_BOOKED_TICKETS");
+      });
+settings: {}
+order: 9000

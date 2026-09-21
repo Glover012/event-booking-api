@@ -1,0 +1,22 @@
+$kind: http-request
+description: |-
+  By default newly created event is a non-published draft and only those are removable. 
+  This request test it.
+url: "{{baseUrl}}/organizer/events/{{test_event_id}}"
+method: DELETE
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Draft is deleted", () => {
+          pm.expect(pm.response.code).to.eql(200);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENT_DELETED");
+          pm.expect(body.data).to.be.null;
+      });
+settings: {}
+order: 2000

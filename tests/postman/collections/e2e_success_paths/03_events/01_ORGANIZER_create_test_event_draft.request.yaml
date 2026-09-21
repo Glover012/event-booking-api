@@ -1,0 +1,51 @@
+$kind: http-request
+description: |- 
+  Test event, created only to be deleted in step 02.
+url: "{{baseUrl}}/organizer/events"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "test event to delete",
+      "location": "test location",
+      "capacity": 10,
+      "starts_at": "{{starts_at}}",
+      "ends_at": "{{ends_at}}",
+      "description": null
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      // The create and update forms both reject a start date in the past,
+      // and require an aware datatime objects.
+      const day = 24 * 60 * 60 * 1000;
+      pm.variables.set("starts_at", new Date(Date.now() + 7 * day).toISOString());
+      pm.variables.set("ends_at", new Date(Date.now() + 7 * day + 2 * 60 * 60 * 1000).toISOString());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Event is created as a private draft", () => {
+          pm.expect(pm.response.code).to.eql(201);
+
+          const body = pm.response.json();
+          pm.expect(body.code).to.eql("EVENT_CREATED");
+          pm.expect(body.data.status).to.eql("draft");
+          pm.expect(body.data.public).to.be.false;
+      });
+
+      // Owner never comes from the request body, it comes from the verified token.
+      pm.test("The organizer owns the event", () => {
+          pm.expect(pm.response.json().data.owner_id).to.eql(Number(pm.environment.get("organizer_id")));
+      });
+
+      if (pm.response.code === 201) {
+          pm.environment.set("test_event_id", pm.response.json().data.id);
+      }
+settings: {}
+order: 1000

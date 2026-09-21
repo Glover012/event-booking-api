@@ -1,0 +1,29 @@
+$kind: http-request
+description: "Attempt to book 0 tickets."
+url: "{{baseUrl}}/events/{{active_event_id}}/bookings"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "ticket_amount": 0
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A booking with zero tickets is rejected", () => {
+          pm.expect(pm.response.code).to.eql(422);
+
+          const body = pm.response.json();
+          pm.expect(body.status).to.eql("fail");
+          pm.expect(body.code).to.eql("VALIDATION_ERROR");
+          pm.expect(body.data).to.be.an("array").and.not.empty;
+          pm.expect(body.data[0].loc).to.include("ticket_amount");
+      });
+settings: {}
+order: 3000

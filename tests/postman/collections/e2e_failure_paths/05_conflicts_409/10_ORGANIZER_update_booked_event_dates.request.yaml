@@ -1,0 +1,38 @@
+$kind: http-request
+description: |-
+  Attempt to edit event dates with confirmed bookings. Edit dataes would hand an 
+  attendee a ticket for a date they never agreed to, and there is nothing to 
+  notify them with yet.
+url: "{{baseUrl}}/organizer/events/{{active_event_id}}"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "name": "date move attempt",
+      "location": "somewhere",
+      "capacity": 10,
+      "starts_at": "{{starts_at}}",
+      "ends_at": "{{ends_at}}",
+      "description": null
+    }
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      const day = 24 * 60 * 60 * 1000;
+      pm.variables.set("starts_at", new Date(Date.now() + 30 * day).toISOString());
+      pm.variables.set("ends_at", new Date(Date.now() + 30 * day + 4 * 60 * 60 * 1000).toISOString());
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Dates are frozen once someone holds a ticket", () => {
+          pm.expect(pm.response.code).to.eql(409);
+          pm.expect(pm.response.json().code).to.eql("EVENT_DATES_LOCKED_BY_BOOKINGS");
+      });
+settings: {}
+order: 10000

@@ -1,0 +1,19 @@
+$kind: http-request
+description: |-
+  A draft is the only event that can be deleted. Anything past that point is 
+  withdrawn by cancelling, so the booking history remain.
+url: "{{baseUrl}}/organizer/events/{{active_event_id}}"
+method: DELETE
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("An active event cannot be deleted", () => {
+          pm.expect(pm.response.code).to.eql(409);
+          pm.expect(pm.response.json().code).to.eql("EVENT_NOT_DELETABLE");
+      });
+settings: {}
+order: 5000

@@ -1,0 +1,19 @@
+$kind: http-request
+description: |-
+  User tries to cancel foreign booking. Same rule as for events in 01: 
+  ownership failures and missing rows answer 404.
+url: "{{baseUrl}}/me/bookings/{{foreign_booking_id}}/cancel"
+method: POST
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{user_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Another account's booking is indistinguishable from a missing one", () => {
+          pm.expect(pm.response.code).to.eql(404);
+          pm.expect(pm.response.json().code).to.eql("BOOKING_DOES_NOT_EXIST");
+      });
+settings: {}
+order: 3000

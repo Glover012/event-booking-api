@@ -1,0 +1,25 @@
+$kind: http-request
+description: |-
+  Changing event status to the same is refused.
+url: "{{baseUrl}}/organizer/events/{{active_event_id}}/status"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "status": "active"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("An event cannot be moved to the status it already has", () => {
+          pm.expect(pm.response.code).to.eql(409);
+          pm.expect(pm.response.json().code).to.eql("SAME_STATUS");
+      });
+settings: {}
+order: 7000

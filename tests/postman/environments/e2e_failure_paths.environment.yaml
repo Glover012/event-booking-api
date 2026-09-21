@@ -1,15 +1,31 @@
 name: e2e_failure_paths
 values:
-  - { key: baseUrl,                  value: 'http://localhost:8000' }
+  - { key: baseUrl,             value: 'http://localhost:8000' }
 
-  # Seeded accounts, all sharing one password 'test'
-  - { key: admin_username,           value: 'admin1' }
-  - { key: organizer_username,       value: 'organizer1' }
-  - { key: other_organizer_username, value: 'organizer2' }
-  - { key: user_username,            value: 'user1' }
-  - { key: seed_password,            value: 'test' }
+  # Seeded data by seed_full.sql
+  ## Accounts
+  - { key: admin_username,      value: 'admin1' }
+  - { key: organizer_username,  value: 'organizer1' }
+  - { key: user_username,       value: 'user1' }
+  - { key: other_user_username, value: 'user4' }
+  - { key: seed_password,       value: 'test' }
+  ## Ids
+  - { key: admin_id,            value: '2' }
+  - { key: active_event_id,     value: '1' }
+  - { key: full_event_id,       value: '2' }
+  - { key: draft_event_id,      value: '3' }
+  - { key: finished_event_id,   value: '4' }
+  - { key: foreign_event_id,    value: '5' }
+  - { key: foreign_booking_id,  value: '2' }
 
   # Wrong inputs
-  - { key: wrong_password,           value: 'WrongPassword1!' }
-  - { key: unknown_username,         value: 'nobody_here' }
-  - { key: malformed_token,          value: 'not-a-jwt' }
+  - { key: wrong_password,      value: 'WrongPassword1!' }
+  - { key: unknown_username,    value: 'nobody_here' }
+  - { key: malformed_token,     value: 'not-a-jwt' }
+  - { key: weak_password,       value: 'haslo' }
+
+  # Filled in by 00_setup
+  - { key: admin_token,         value: '' }
+  - { key: organizer_token,     value: '' }
+  - { key: user_token,          value: '' }
+  - { key: other_user_token,    value: '' }

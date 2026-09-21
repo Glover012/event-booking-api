@@ -17,5 +17,3 @@ values:
   - { key: event_id,           value: '' }
   - { key: test_event_id,      value: '' }
   - { key: booking_id,         value: '' }
-  - { key: starts_at,          value: '' }
-  - { key: ends_at,            value: '' }

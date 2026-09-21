@@ -1,0 +1,26 @@
+$kind: http-request
+description: "Setup. Write token for other user paths."
+url: "{{baseUrl}}/auth/token"
+method: POST
+headers:
+  Content-Type: application/x-www-form-urlencoded
+  Accept: application/json
+body:
+  type: urlencoded
+  content:
+    username: "{{other_user_username}}"
+    password: "{{seed_password}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Second user is logged in", () => {
+          pm.expect(pm.response.code).to.eql(200);
+          pm.expect(pm.response.json().access_token).to.be.a("string").and.not.empty;
+      });
+
+      if (pm.response.code === 200) {
+          pm.environment.set("other_user_token", pm.response.json().access_token);
+      }
+settings: {}
+order: 4000

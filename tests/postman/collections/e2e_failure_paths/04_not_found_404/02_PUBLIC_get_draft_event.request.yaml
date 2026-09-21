@@ -1,0 +1,16 @@
+$kind: http-request
+description: "The public query filters on public = true, so an unpublished event reads as missing."
+url: "{{baseUrl}}/events/{{draft_event_id}}"
+method: GET
+headers:
+  Accept: application/json
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A draft is invisible to the public route", () => {
+          pm.expect(pm.response.code).to.eql(404);
+          pm.expect(pm.response.json().code).to.eql("EVENT_DOES_NOT_EXIST");
+      });
+settings: {}
+order: 2000

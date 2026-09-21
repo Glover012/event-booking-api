@@ -1,0 +1,19 @@
+$kind: http-request
+description: |-
+  An organizer tries to access foreign event. Deliberately 404 and not 403, since
+  the answer must not confirm that the event exists.
+url: "{{baseUrl}}/organizer/events/{{foreign_event_id}}"
+method: GET
+headers:
+  Accept: application/json
+  Authorization: "Bearer {{organizer_token}}"
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Another organizer's event is indistinguishable from a missing one", () => {
+          pm.expect(pm.response.code).to.eql(404);
+          pm.expect(pm.response.json().code).to.eql("EVENT_DOES_NOT_EXIST");
+      });
+settings: {}
+order: 1000

@@ -1,0 +1,25 @@
+$kind: http-request
+description: 
+  Other user tries to book full event.
+url: "{{baseUrl}}/events/{{full_event_id}}/bookings"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+  Authorization: "Bearer {{other_user_token}}"
+body:
+  type: json
+  content: |-
+    {
+      "ticket_amount": 1
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("A sold out event refuses another booking", () => {
+          pm.expect(pm.response.code).to.eql(409);
+          pm.expect(pm.response.json().code).to.eql("NOT_ENOUGH_TICKETS");
+      });
+settings: {}
+order: 1000
